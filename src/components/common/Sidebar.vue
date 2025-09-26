@@ -31,63 +31,62 @@
             :class="$route.path === '/dashboard' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
           >
             <i class="fas fa-tachometer-alt text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">仪表盘</span>
+            <span v-if="isOpen" class="ml-3">总览</span>
           </router-link>
         </li>
         
         <li class="mb-1">
           <router-link 
-            to="/links"
+            to="/anomalies"
             class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-            :class="$route.path === '/links' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
+            :class="$route.path === '/anomalies' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
           >
-            <i class="fas fa-project-diagram text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">链路管理</span>
+            <i class="fas fa-exclamation-triangle text-lg w-6 text-center"></i>
+            <span v-if="isOpen" class="ml-3">异常检测</span>
           </router-link>
         </li>
         
         <li class="mb-1">
           <router-link 
-            to="/blacklist"
+            to="/ratelimit"
             class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-            :class="$route.path === '/blacklist' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
+            :class="$route.path === '/ratelimit' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
+          >
+            <i class="fas fa-tachometer-alt text-lg w-6 text-center"></i>
+            <span v-if="isOpen" class="ml-3">限速中心</span>
+          </router-link>
+        </li>
+        
+        <li class="mb-1">
+          <router-link 
+            to="/acl"
+            class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+            :class="$route.path === '/acl' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
           >
             <i class="fas fa-ban text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">黑白名单管理</span>
+            <span v-if="isOpen" class="ml-3">ACL管理</span>
           </router-link>
         </li>
         
         <li class="mb-1">
           <router-link 
-            to="/analysis"
+            to="/flowstats"
             class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-            :class="$route.path === '/analysis' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
+            :class="$route.path === '/flowstats' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
           >
             <i class="fas fa-chart-line text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">AI分析结果</span>
-          </router-link>
-        </li>
-        
-
-        <li class="mb-1">
-          <router-link 
-            to="/sdn-topology"
-            class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-            :class="$route.path === '/sdn-topology' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
-          >
-            <i class="fas fa-network-wired text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">SDN拓扑</span>
+            <span v-if="isOpen" class="ml-3">流量统计</span>
           </router-link>
         </li>
         
         <li class="mb-1">
           <router-link 
-            to="/sdn-chat"
+            to="/ai-assistant"
             class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-            :class="$route.path === '/sdn-chat' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
+            :class="$route.path === '/ai-assistant' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
           >
-            <i class="fas fa-comments text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">SDN智能控制</span>
+            <i class="fas fa-robot text-lg w-6 text-center"></i>
+            <span v-if="isOpen" class="ml-3">AI助手</span>
           </router-link>
         </li>
       </ul>

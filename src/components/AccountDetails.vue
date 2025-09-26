@@ -147,7 +147,7 @@
             {{ userInfo.username?.charAt(0).toUpperCase() || 'U' }}
           </div>
           <img v-else 
-            :src="userInfo.avatar.startsWith('http') || userInfo.avatar.startsWith('data:') ? userInfo.avatar : 'http://localhost:8001' + userInfo.avatar" 
+            :src="userInfo.avatar.startsWith('http') || userInfo.avatar.startsWith('data:') ? userInfo.avatar : 'http://localhost:8000' + userInfo.avatar" 
             alt="用户头像" 
             class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-gray-200"
             @error="handleImageError"

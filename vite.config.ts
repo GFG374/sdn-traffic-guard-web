@@ -11,11 +11,18 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5174,
+    port: 5175,
+    fs: {
+      deny: ['**/SDN/**']
+    },
     proxy: {
       '/api': {
-        target: 'http://localhost:8001',
-        changeOrigin: true,
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      },
+      '/v1': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
       },
     },
   },

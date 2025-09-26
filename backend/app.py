@@ -111,6 +111,10 @@ app.include_router(blacklist_router)
 from ollama_routes import router as ollama_router
 app.include_router(ollama_router)
 
+# 导入V1路由
+from v1_routes import router as v1_router
+app.include_router(v1_router)
+
 
 
 # API路由

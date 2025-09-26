@@ -39,34 +39,33 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/analysis',
-    name: 'Analysis',
-    component: () => import('../components/Analysis/Analysis.vue'),
+    path: '/anomalies',
+    name: 'Anomalies',
+    component: () => import('../components/Anomalies/Anomalies.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/blacklist',
-    name: 'Blacklist',
-    component: () => import('../components/Blacklist/Blacklist.vue'),
+    path: '/ratelimit',
+    name: 'RateLimit',
+    component: () => import('../components/RateLimit/RateLimit.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/links',
-    name: 'Links',
-    component: () => import('../components/Links/Links.vue'),
-    meta: { requiresAuth: true }
-  },
-
-  {
-    path: '/sdn-topology',
-    name: 'SDNTopology',
-    component: () => import('../components/SDN/SDNTopology.vue'),
+    path: '/acl',
+    name: 'ACL',
+    component: () => import('../components/ACL/ACL.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/sdn-chat',
-    name: 'SDNChat',
-    component: () => import('../components/SDNChat/SDNChat.vue'),
+    path: '/flowstats',
+    name: 'FlowStats',
+    component: () => import('../components/FlowStats/FlowStats.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/ai-assistant',
+    name: 'AIAssistant',
+    component: () => import('../components/AIAssistant/AIAssistant.vue'),
     meta: { requiresAuth: true }
   },
   {

@@ -1,5 +1,5 @@
 // 数据库服务层 - API客户端
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // 封装API请求
 async function apiRequest(endpoint: string, options: RequestInit = {}) {

@@ -27,7 +27,7 @@
               {{ currentUsername?.charAt(0).toUpperCase() || 'U' }}
             </div>
             <img v-else 
-              :src="currentAvatar.startsWith('http') || currentAvatar.startsWith('data:') ? currentAvatar : 'http://localhost:8001' + currentAvatar" 
+              :src="currentAvatar.startsWith('http') || currentAvatar.startsWith('data:') ? currentAvatar : 'http://localhost:8000' + currentAvatar" 
               alt="当前头像" 
               class="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
               @error="handleImageError"

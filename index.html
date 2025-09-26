@@ -4,11 +4,40 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- 纯白活力版视觉 tokens -->
+    <style>
+      :root{
+        --bg: #ffffff;
+        --card: #f7f9fc;
+        --border: #e6e9f0;
+        --primary: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%);
+        --danger: #ff4d4f;
+        --success: #52c41a;
+        --text: #262626;
+        --text2: #8c8c8c;
+        --radius: 12px;
+        --shadow: 0 2px 8px rgba(0,0,0,.05);
+      }
+      
+      body {
+        background-color: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+    </style>
+    
     <title>网络管理平台</title>
   </head>
   <body>
     <div id="app"></div>
+    
+    <!-- Vue3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
