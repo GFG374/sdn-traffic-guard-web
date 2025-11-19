@@ -240,7 +240,7 @@ async def block_ip_address(ip: str) -> Dict[str, Any]:
     """封锁IP地址"""
     try:
         # 调用RYU控制器API
-        ryu_url = "http://127.0.0.1:8080/v1/chat"
+        ryu_url = "http://192.168.44.129:8080/v1/chat"
         payload = {
             "user_id": f"user-{int(datetime.now().timestamp())}",
             "user": f"ai: 加黑 {ip}"
@@ -283,7 +283,7 @@ async def unblock_ip_address(ip: str) -> Dict[str, Any]:
     """解除IP地址封锁"""
     try:
         # 调用RYU控制器API
-        ryu_url = "http://127.0.0.1:8080/v1/chat"
+        ryu_url = "http://192.168.44.129:8080/v1/chat"
         payload = {
             "user_id": f"user-{int(datetime.now().timestamp())}",
             "user": f"ai: 解除 {ip}"
@@ -326,7 +326,7 @@ async def query_ip_status(ip: str) -> Dict[str, Any]:
     """查询IP地址状态"""
     try:
         # 调用RYU控制器API
-        ryu_url = "http://127.0.0.1:8080/v1/chat"
+        ryu_url = "http://192.168.44.129:8080/v1/chat"
         payload = {
             "user_id": f"user-{int(datetime.now().timestamp())}",
             "user": f"ai: 查询 {ip}"
@@ -493,9 +493,24 @@ async def add_switch_flow(
         Dict: 操作结果
     """
     try:
+        # 调试：打印用户信息
+        print(f"[DEBUG] 添加流表请求")
+        print(f"[DEBUG] 用户名: {current_user.username}")
+        print(f"[DEBUG] 用户ID: {current_user.id}")
+        print(f"[DEBUG] 角色原始值: {repr(current_user.role)}")
+        print(f"[DEBUG] 角色字节: {current_user.role.encode() if current_user.role else None}")
+        print(f"[DEBUG] 角色长度: {len(current_user.role) if current_user.role else 0}")
+        
+        # 清理role字段（去除空格和换行符）
+        user_role = current_user.role.strip().lower() if current_user.role else ""
+        print(f"[DEBUG] 清理后的角色: '{user_role}'")
+        
         # 验证用户权限（管理员才能添加流表）
-        if current_user.role != "admin":
-            raise HTTPException(status_code=403, detail="您没有权限执行此操作")
+        if user_role != "admin":
+            raise HTTPException(
+                status_code=403, 
+                detail=f"需要管理员权限才能添加流表（当前角色: {current_user.role}）"
+            )
         
         success = sdn_manager.add_flow_entry(dpid, flow_entry)
         if not success:
@@ -634,6 +649,213 @@ async def get_network_summary(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取网络摘要信息失败: {str(e)}")
 
+@sdn_router.get("/dashboard-data")
+async def get_dashboard_data(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取Dashboard所需的所有实时数据
+    
+    Returns:
+        Dict: Dashboard所需的所有数据
+    """
+    try:
+        # 获取网络摘要信息
+        summary = sdn_manager.get_network_summary()
+        
+        # 获取交换机信息
+        switches = sdn_manager.get_switch_stats() or []
+        
+        # 获取所有流表信息
+        all_flows = sdn_manager.get_all_flows() or {}
+        
+        # 统计总流表数
+        total_flows = 0
+        for dpid, flows in all_flows.items():
+            total_flows += len(flows)
+        
+        # 获取限速主机列表
+        limited_hosts = []
+        if hasattr(sdn_manager, 'get_limit_list'):
+            try:
+                # 尝试从SDN控制器获取限速列表
+                limited_hosts = sdn_manager.get_limit_list()
+            except:
+                # 如果失败，尝试从RYU控制器实例获取
+                try:
+                    from SDN.sdn_smart import SDNSecurityController
+                    controller_instances = [app for app in ry_app_mgr.SERVICE_BRICKS.values() 
+                                          if isinstance(app, SDNSecurityController)]
+                    if controller_instances:
+                        limited_hosts = controller_instances[0].get_limit_list()
+                except Exception as e:
+                    logger.error(f"获取限速主机列表失败: {e}")
+        
+        # 获取ACL列表
+        acl_lists = {}
+        if hasattr(sdn_manager, 'get_acl_lists'):
+            try:
+                acl_lists = sdn_manager.get_acl_lists()
+            except:
+                # 如果失败，尝试从RYU控制器实例获取
+                try:
+                    from SDN.sdn_smart import SDNSecurityController
+                    controller_instances = [app for app in ry_app_mgr.SERVICE_BRICKS.values() 
+                                          if isinstance(app, SDNSecurityController)]
+                    if controller_instances:
+                        acl_lists = controller_instances[0].get_acl_lists()
+                except Exception as e:
+                    logger.error(f"获取ACL列表失败: {e}")
+        
+        # 获取最近的异常事件
+        recent_anomalies = []
+        try:
+            # 从数据库获取最近的异常事件
+            conn = db
+            with conn.cursor() as cursor:
+                sql = """
+                SELECT id, src_ip, dst_ip, anomaly_type, confidence, details, 
+                       detected_at, status, action_taken
+                FROM anomaly_events
+                ORDER BY detected_at DESC
+                LIMIT 10
+                """
+                cursor.execute(sql)
+                columns = [col[0] for col in cursor.description]
+                recent_anomalies = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                
+                # 格式化时间戳
+                for anomaly in recent_anomalies:
+                    if isinstance(anomaly['detected_at'], datetime):
+                        anomaly['timestamp'] = int(anomaly['detected_at'].timestamp())
+                    else:
+                        anomaly['timestamp'] = int(time.time())
+        except Exception as e:
+            logger.error(f"获取最近异常事件失败: {e}")
+            # 如果数据库查询失败，尝试从RYU控制器获取
+            try:
+                from SDN.sdn_smart import SDNSecurityController, ANOMALY_QUEUE
+                if ANOMALY_QUEUE:
+                    # 转换队列数据为列表
+                    recent_anomalies = list(ANOMALY_QUEUE)[-10:]
+                    for i, anomaly in enumerate(recent_anomalies):
+                        anomaly['id'] = i
+                        if 'timestamp' not in anomaly:
+                            anomaly['timestamp'] = int(time.time())
+            except Exception as e:
+                logger.error(f"从RYU控制器获取异常事件失败: {e}")
+        
+        # 获取流量统计数据
+        flow_stats = []
+        try:
+            # 尝试从v1_routes中获取流量统计数据
+            from v1_routes import generate_real_flowstats
+            flow_stats = generate_real_flowstats()
+        except Exception as e:
+            logger.error(f"获取流量统计数据失败: {e}")
+            # 返回空数据而不是模拟数据
+            flow_stats = []
+        
+        # 计算协议分布
+        protocol_distribution = {}
+        for stat in flow_stats:
+            protocol = stat.get("protocol", "OTHER")
+            if protocol not in protocol_distribution:
+                protocol_distribution[protocol] = 0
+            protocol_distribution[protocol] += stat.get("packet_count", 0)
+        
+        # 计算活跃主机数
+        active_hosts = set()
+        for stat in flow_stats:
+            if "src_ip" in stat:
+                active_hosts.add(stat["src_ip"])
+            if "dst_ip" in stat:
+                active_hosts.add(stat["dst_ip"])
+        
+        # 构建返回数据
+        dashboard_data = {
+            "success": True,
+            "timestamp": datetime.now().isoformat(),
+            "summary": {
+                "switch_count": len(switches),
+                "active_hosts": len(active_hosts),
+                "anomaly_count": len(recent_anomalies),
+                "limited_hosts": len(limited_hosts),
+                "total_flows": total_flows,
+                "controller_status": summary.get("controller_status", "unknown")
+            },
+            "traffic_stats": {
+                "flow_stats": flow_stats[-144:],  # 最近24小时的数据(每10分钟一个点)
+                "protocol_distribution": protocol_distribution
+            },
+            "anomalies": recent_anomalies,
+            "acl": {
+                "whitelist": acl_lists.get("white_list", []),
+                "blacklist": acl_lists.get("black_list", [])
+            },
+            "limited_hosts": limited_hosts
+        }
+        
+        return dashboard_data
+    except Exception as e:
+        logger.error(f"获取Dashboard数据失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取Dashboard数据失败: {str(e)}")
+
+
+@sdn_router.get("/dashboard-data")
+async def get_dashboard_data():
+    """获取仪表盘数据
+    
+    Returns:
+        Dict: 仪表盘数据，包括交换机数量、主机数量、异常数量、限速主机数量等
+    """
+    try:
+        # 检查控制器状态
+        controller_status = sdn_manager.is_controller_alive()
+        if not controller_status:
+            raise HTTPException(status_code=500, detail="RYU控制器离线")
+        
+        # 获取交换机信息
+        switches = sdn_manager.get_switch_stats() or []
+        
+        # 获取主机信息
+        hosts = sdn_manager.get_hosts() or []
+        
+        # 获取异常信息
+        anomalies = sdn_manager.get_anomalies() or []
+        
+        # 获取限速主机信息
+        limited_hosts = sdn_manager.get_limit_list() or []
+        
+        # 获取流量数据
+        traffic_data = sdn_manager.get_traffic_stats() or {}
+        
+        # 获取协议分布
+        protocol_data = sdn_manager.get_protocol_distribution() or {}
+        
+        # 获取访问控制列表
+        acl_data = {
+            "whitelist": sdn_manager.get_whitelist() or [],
+            "blacklist": sdn_manager.get_blacklist() or []
+        }
+        
+        return {
+            "summary": {
+                "switch_count": len(switches),
+                "host_count": len(hosts),
+                "anomaly_count": len(anomalies),
+                "limited_count": len(limited_hosts)
+            },
+            "traffic": traffic_data,
+            "protocols": protocol_data,
+            "anomalies": anomalies[:5],  # 只返回最近5条异常
+            "acl": acl_data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取仪表盘数据失败: {str(e)}")
+
 
 @sdn_router.get("/monitoring/start")
 async def start_network_monitoring(
@@ -730,4 +952,4 @@ if __name__ == "__main__":
     )
     
     # 启动测试服务器
-    uvicorn.run(app, host="0.0.0.0", port=8002)
+    uvicorn.run(app, host="0.0.0.0", port=8001)

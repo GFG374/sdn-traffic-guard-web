@@ -4,43 +4,86 @@
     darkMode ? 'bg-gray-900 border-b border-gray-700' : 'bg-white'
   ]">
     <div class="flex items-center">
-      <button 
-        :class="[
-          'mr-4 transition-colors duration-300',
-          darkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-600 hover:text-blue-600'
-        ]"
-        @click="$emit('toggleSidebar')"
-      >
-        <i class="fas fa-bars text-xl"></i>
-      </button>
-      <div class="relative">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-          <i :class="[
-            'fas fa-search',
-            darkMode ? 'text-gray-400' : 'text-gray-600'
-          ]"></i>
-        </span>
-        <input 
-          type="text" 
-          placeholder="搜索..." 
-          :class="[
-            'pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors duration-300 w-64',
-            darkMode 
-              ? 'bg-gray-800 border-gray-600 text-gray-200 placeholder-gray-400' 
-              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-          ]"
-        >
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+          <i class="fas fa-server text-xl"></i>
+        </div>
+        <h1 class="text-xl font-bold text-gray-800">基于SDN的流量检测与监控系统</h1>
       </div>
+      
+      <!-- 导航菜单 -->
+      <nav class="ml-8">
+        <ul class="flex space-x-6">
+          <li>
+            <router-link 
+              to="/dashboard"
+              class="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors duration-300"
+              :class="$route.path === '/dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : ''"
+            >
+              <i class="fas fa-tachometer-alt text-lg mr-2"></i>
+              <span>数据总览</span>
+            </router-link>
+          </li>
+          
+          <li>
+            <router-link 
+              to="/anomalies"
+              class="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors duration-300"
+              :class="$route.path === '/anomalies' ? 'text-blue-600 border-b-2 border-blue-600' : ''"
+            >
+              <i class="fas fa-exclamation-triangle text-lg mr-2"></i>
+              <span>异常检测</span>
+            </router-link>
+          </li>
+          
+          <li>
+            <router-link 
+              to="/ratelimit"
+              class="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors duration-300"
+              :class="$route.path === '/ratelimit' ? 'text-blue-600 border-b-2 border-blue-600' : ''"
+            >
+              <i class="fas fa-tachometer-alt text-lg mr-2"></i>
+              <span>限速中心</span>
+            </router-link>
+          </li>
+          
+          <li>
+            <router-link 
+              to="/flowtable"
+              class="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors duration-300"
+              :class="$route.path === '/flowtable' ? 'text-blue-600 border-b-2 border-blue-600' : ''"
+            >
+              <i class="fas fa-table text-lg mr-2"></i>
+              <span>流表管理</span>
+            </router-link>
+          </li>
+          
+          <li>
+            <router-link 
+              to="/ai-assistant"
+              class="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors duration-300"
+              :class="$route.path === '/ai-assistant' ? 'text-blue-600 border-b-2 border-blue-600' : ''"
+            >
+              <i class="fas fa-robot text-lg mr-2"></i>
+              <span>AI助手</span>
+            </router-link>
+          </li>
+          
+          <li>
+            <router-link 
+              to="/knowledge"
+              class="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors duration-300"
+              :class="$route.path === '/knowledge' ? 'text-blue-600 border-b-2 border-blue-600' : ''"
+            >
+              <i class="fas fa-book text-lg mr-2"></i>
+              <span>知识库</span>
+            </router-link>
+          </li>
+        </ul>
+      </nav>
     </div>
     
     <div class="flex items-center space-x-6">
-      <button :class="[
-        'relative transition-colors duration-300',
-        darkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-600 hover:text-blue-600'
-      ]">
-        <i class="fas fa-bell text-xl"></i>
-        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">3</span>
-      </button>
       
       <!-- 声音开关 -->
       <button 

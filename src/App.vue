@@ -6,18 +6,9 @@
     </div>
     
     <!-- 已认证时显示主界面 -->
-    <div v-else class="flex h-screen bg-gray-50 overflow-hidden">
-      <!-- 侧边栏 -->
-      <Sidebar 
-        :is-open="sidebarOpen" 
-        @nav-change="handleNavChange"
-        @toggle-sidebar="toggleSidebar"
-        @logout="handleLogout"
-      />
-      
+    <div v-else class="flex flex-col h-screen bg-gray-50 overflow-hidden">
       <!-- 主内容区 -->
-      <main class="flex-1 transition-all duration-300 overflow-y-auto" 
-            :class="sidebarOpen ? 'ml-[256px]' : 'ml-[80px]'">
+      <main class="flex-1 overflow-y-auto">
         <TopBar @toggle-sidebar="toggleSidebar" />
         
         <!-- 路由视图 -->
@@ -28,31 +19,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useUserStore } from './stores/user';
-import Sidebar from './components/common/Sidebar.vue';
 import TopBar from './components/common/TopBar.vue';
 
 // 状态管理
-const sidebarOpen = ref(true);
 const userStore = useUserStore();
 
 const isAuthenticated = computed(() => userStore.isAuthenticated);
 
-// 侧边栏切换
+// 侧边栏切换（保留函数以避免错误，但不再使用）
 const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value;
+  // 不再需要切换侧边栏
 };
 
-// 导航切换（现在由路由处理）
-const handleNavChange = (_nav: string) => {
-  // 路由切换由router-link处理
-};
-
-// 登出处理
+// 登出处理 - 在TopBar组件中使用
 const handleLogout = () => {
   userStore.logout();
 };
+// 导出给其他组件使用
+defineExpose({ handleLogout });
 </script>
 
 <style scoped>

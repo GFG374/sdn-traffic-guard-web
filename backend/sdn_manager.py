@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any
 class SDNManager:
     """SDN控制器管理类，提供与RYU控制器交互的各种方法"""
     
-    def __init__(self, controller_ip: str = '192.168.44.1', controller_port: int = 8080, timeout: int = 5):
+    def __init__(self, controller_ip: str = '192.168.44.129', controller_port: int = 8080, timeout: int = 5):
         """初始化SDN管理器
         
         Args:
@@ -32,9 +32,12 @@ class SDNManager:
             bool: 控制器是否在线
         """
         try:
-            response = requests.get(f'{self.base_url}/', timeout=self.timeout)
+            # 尝试访问/v1/summary接口（更可靠）
+            response = requests.get(f'{self.base_url}/v1/summary', timeout=self.timeout)
             return response.status_code == 200
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            return False
+        except Exception:
             return False
     
     def get_network_topology(self) -> Optional[Dict[str, Any]]:
@@ -62,7 +65,7 @@ class SDNManager:
             Dict: 流表信息字典，如果失败则返回None
         """
         try:
-            response = requests.get(f'{self.base_url}/stats/flow/{dpid}', headers=self.headers, timeout=self.timeout)
+            response = requests.get(f'{self.base_url}/v1/switches/{dpid}/flows', headers=self.headers, timeout=self.timeout)
             if response.status_code == 200:
                 return response.json()
             return None
@@ -97,8 +100,8 @@ class SDNManager:
         """
         try:
             response = requests.post(
-                f'{self.base_url}/stats/flowentry/add',
-                json={"dpid": dpid, "flow": flow_entry},
+                f'{self.base_url}/v1/switches/{dpid}/flows',
+                json=flow_entry,
                 headers=self.headers,
                 timeout=self.timeout
             )
@@ -118,9 +121,9 @@ class SDNManager:
             bool: 删除是否成功
         """
         try:
-            response = requests.post(
-                f'{self.base_url}/stats/flowentry/delete_strict',
-                json={"dpid": dpid, "flow": flow_entry},
+            response = requests.delete(
+                f'{self.base_url}/v1/switches/{dpid}/flows',
+                json=flow_entry,
                 headers=self.headers,
                 timeout=self.timeout
             )
@@ -140,7 +143,7 @@ class SDNManager:
         """
         try:
             response = requests.delete(
-                f'{self.base_url}/stats/flowentry/clear/{dpid}',
+                f'{self.base_url}/v1/switches/{dpid}/flows/all',
                 headers=self.headers,
                 timeout=self.timeout
             )
@@ -156,7 +159,7 @@ class SDNManager:
             List[int]: 交换机DPID列表，如果失败则返回None
         """
         try:
-            response = requests.get(f'{self.base_url}/stats/switches', headers=self.headers, timeout=self.timeout)
+            response = requests.get(f'{self.base_url}/v1/switches', headers=self.headers, timeout=self.timeout)
             if response.status_code == 200:
                 return response.json()
             return None
@@ -329,6 +332,32 @@ class SDNManager:
                 summary["links"] = len(topology.get("links", []))
         
         return summary
+
+    def get_limit_list(self) -> List[Dict[str, Any]]:
+        """获取限速主机列表
+        
+        Returns:
+            List[Dict[str, Any]]: 限速主机列表
+        """
+        try:
+            # 尝试从RYU控制器获取限速列表
+            response = requests.get(f"{self.base_url}/ratelimit", timeout=self.timeout)
+            if response.status_code == 200:
+                data = response.json()
+                if "limit_list" in data:
+                    return data["limit_list"]
+            return []
+        except Exception as e:
+            print(f"获取限速主机列表失败: {str(e)}")
+            return []
+
+    def get_rate_limited_hosts(self) -> List[Dict[str, Any]]:
+        """获取限速主机列表（兼容性方法）
+        
+        Returns:
+            List[Dict[str, Any]]: 限速主机列表
+        """
+        return self.get_limit_list()
 
 
 # 示例使用

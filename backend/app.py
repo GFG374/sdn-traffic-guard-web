@@ -80,7 +80,7 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 # FastAPI应用
-app = FastAPI(title="网络管理平台API", version="1.0.0")
+app = FastAPI(title="基于SDN的流量检测与监控系统API", version="1.0.0")
 
 # CORS配置 - 允许前端开发服务器访问
 app.add_middleware(
@@ -88,7 +88,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173", "http://127.0.0.1:5173", 
         "http://localhost:5174", "http://127.0.0.1:5174",
-        "http://localhost:5175", "http://127.0.0.1:5175"
+        "http://localhost:5175", "http://127.0.0.1:5175",
+        "http://localhost:5176", "http://127.0.0.1:5176"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -99,9 +100,45 @@ app.add_middleware(
 # 导入AI路由
 # AI路由已移除，使用Ollama替代
 
-# 导入SDN路由
-from sdn_routes import sdn_router
-app.include_router(sdn_router)
+# API路由前缀
+API_PREFIX = "/api"
+
+# 用户头像API
+@app.get(f"{API_PREFIX}/auth/user-avatar/{{username}}")
+def get_user_avatar(username: str, db: Session = Depends(get_db)):
+    """获取用户头像"""
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        return {"success": False, "message": "用户不存在"}
+    
+    return {"success": True, "avatar": user.avatar}
+
+# 用户登录API
+@app.post(f"{API_PREFIX}/auth/login")
+def login(user_login: UserLogin, db: Session = Depends(get_db)):
+    """用户登录"""
+    user = db.query(User).filter(User.username == user_login.username).first()
+    if not user or user.hashed_password != user_login.password:
+        return {"success": False, "message": "用户名或密码错误"}
+    
+    # 返回用户信息和token（这里简化处理，使用用户ID作为token）
+    return {
+        "success": True,
+        "message": "登录成功",
+        "token": str(user.id),
+        "user": {
+            "id": str(user.id),
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "avatar": user.avatar,
+            "created_at": user.created_at
+        }
+    }
+
+# 导入SDN路由（已迁移到v1_routes.py，不再需要单独的sdn_router）
+# from sdn_routes import sdn_router
+# app.include_router(sdn_router)
 
 # 导入黑白名单路由
 from blacklist_routes import router as blacklist_router
@@ -113,14 +150,24 @@ app.include_router(ollama_router)
 
 # 导入V1路由
 from v1_routes import router as v1_router
+# 同时支持/api/v1和/v1两种路径格式
+app.include_router(v1_router, prefix="/api")
 app.include_router(v1_router)
+
+# 导入Agent路由（RAG + MCP + Agent）
+try:
+    from agent_routes import router as agent_router
+    app.include_router(agent_router)
+    print("✅ Agent路由已加载")
+except Exception as e:
+    print(f"⚠️ Agent路由加载失败: {e}")
 
 
 
 # API路由
 @app.get("/")
 async def root():
-    return {"message": "网络管理平台API服务已启动"}
+    return {"message": "基于SDN的流量检测与监控系统API服务已启动"}
 
 @app.post("/api/auth/register")
 async def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -174,24 +221,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         print(f"注册错误: {str(e)}")
         raise HTTPException(status_code=500, detail="服务器内部错误，请稍后重试")
 
-@app.post("/api/auth/login")
-async def login(user: UserLogin, db: Session = Depends(get_db)):
-    # 查找用户
-    db_user = db.query(User).filter(User.username == user.username).first()
-    if not db_user or db_user.hashed_password != user.password:  # 生产环境应验证哈希
-        raise HTTPException(status_code=401, detail="用户名或密码错误")
-    
-    return {
-        "success": True,
-        "message": "登录成功",
-        "user": {
-            "id": db_user.id,
-            "username": db_user.username,
-            "email": db_user.email,
-            "role": db_user.role,
-            "avatar": db_user.avatar
-        }
-    }
+
 
 @app.get("/api/users")
 async def get_users(db: Session = Depends(get_db)):
@@ -392,6 +422,26 @@ async def update_avatar(
         "message": "头像更新成功",
         "avatar_url": user.avatar
     }
+
+@app.get("/api/auth/user-avatar/{username}")
+async def get_user_avatar(username: str, db: Session = Depends(get_db)):
+    """获取用户头像"""
+    # 检查用户是否存在
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        return {
+            "success": False,
+            "message": "用户不存在",
+            "avatar": None
+        }
+    
+    return {
+        "success": True,
+        "message": "获取头像成功",
+        "avatar": user.avatar
+    }
+
+
 
 if __name__ == "__main__":
     import uvicorn

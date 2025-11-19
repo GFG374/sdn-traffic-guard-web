@@ -5,11 +5,54 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Font Awesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- 纯白活力版视觉 tokens -->
+    <!-- 本地Font Awesome替代方案 - 使用CSS + Unicode -->
     <style>
+      /* Font Awesome 本地替代 */
+      [class*="fas"]::before {
+        font-family: Arial, sans-serif;
+        display: inline-block;
+        font-style: normal;
+        font-weight: normal;
+        line-height: 1;
+        -webkit-font-smoothing: antialiased;
+        margin-right: 0.3em;
+      }
+      
+      .fa-robot::before { content: "🤖"; }
+      .fa-tachometer-alt::before { content: "📊"; }
+      .fa-exclamation-triangle::before { content: "⚠️"; }
+      .fa-table::before { content: "📋"; }
+      .fa-book::before { content: "📚"; }
+      .fa-plus::before { content: "➕"; }
+      .fa-trash::before { content: "🗑️"; }
+      .fa-trash-alt::before { content: "🗑️"; }
+      .fa-comments::before { content: "💬"; }
+      .fa-chevron-right::before { content: "▶"; }
+      .fa-cog::before { content: "⚙️"; }
+      .fa-sun::before { content: "☀️"; }
+      .fa-moon::before { content: "🌙"; }
+      .fa-volume-up::before { content: "🔊"; }
+      .fa-volume-mute::before { content: "🔇"; }
+      .fa-user-circle::before { content: "👤"; }
+      .fa-key::before { content: "🔑"; }
+      .fa-user-cog::before { content: "⚙️👤"; }
+      .fa-sign-out-alt::before { content: "🚪"; }
+      .fa-crown::before { content: "👑"; }
+      .fa-keyboard::before { content: "⌨️"; }
+      .fa-shield-alt::before { content: "🛡️"; }
+      .fa-paper-plane::before { content: "✈️"; }
+      .fa-paperclip::before { content: "📎"; }
+      .fa-check::before { content: "✅"; }
+      .fa-times::before { content: "❌"; }
+      .fa-spinner::before { content: "⏳"; }
+      .fa-tools::before { content: "🔧"; }
+      .fa-play::before { content: "▶️"; }
+      .fa-check-circle::before { content: "✅"; }
+      .fa-brain::before { content: "🧠"; }
+      .fa-file-pdf::before { content: "📄"; }
+      .fa-download::before { content: "⬇️"; }
+      .fa-server::before { content: "🖥️"; }
+      
       :root{
         --bg: #ffffff;
         --card: #f7f9fc;
@@ -30,13 +73,10 @@
       }
     </style>
     
-    <title>网络管理平台</title>
+    <title>基于SDN的流量检测与监控系统</title>
   </head>
   <body>
     <div id="app"></div>
-    
-    <!-- Vue3 CDN -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
     <script type="module" src="/src/main.ts"></script>
   </body>

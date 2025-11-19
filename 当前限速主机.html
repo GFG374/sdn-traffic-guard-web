@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDN 智能限速管理中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 配置Tailwind主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        danger: '#F53F3F',
+                        warning: '#FF7D00',
+                        success: '#00B42A',
+                        dark: '#1D2129',
+                        'dark-2': '#4E5969',
+                        'light-1': '#F2F3F5',
+                        'light-2': '#E5E6EB'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(22, 93, 255, 0.1), 0 10px 10px -5px rgba(22, 93, 255, 0.04);
+            }
+            .pulse {
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            @keyframes pulse {
+                0%, 100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.7;
+                }
+            }
+            .slide-in {
+                animation: slideIn 0.5s ease-out forwards;
+            }
+            @keyframes slideIn {
+                from {
+                    transform: translateX(-20px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            .stat-card {
+                transition: all 0.2s ease;
+            }
+            .stat-card:hover {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-light-2 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <i class="fa fa-shield text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-dark">SDN 安全控制器</h1>
+            </div>
+            
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-primary font-medium">限速管理</a>
+                <a href="#" class="text-dark-2 hover:text-primary transition-colors">黑白名单</a>
+                <a href="#" class="text-dark-2 hover:text-primary transition-colors">流量分析</a>
+                <a href="#" class="text-dark-2 hover:text-primary transition-colors">系统设置</a>
+            </nav>
+            
+            <div class="flex items-center space-x-4">
+                <button class="relative p-2 text-dark-2 hover:text-primary transition-colors">
+                    <i class="fa fa-bell text-lg"></i>
+                    <span class="absolute top-1 right-1 h-2 w-2 rounded-full bg-danger"></span>
+                </button>
+                <div class="h-9 w-9 rounded-full bg-light-1 flex items-center justify-center">
+                    <span class="font-medium">AD</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 pt-24 pb-16">
+        <!-- 页面标题与操作区 -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-dark">限速管理中心</h2>
+                <p class="text-dark-2 mt-1">实时监控和管理网络中的限速规则与历史记录</p>
+            </div>
+            
+            <div class="mt-4 md:mt-0 flex space-x-3">
+                <div class="relative">
+                    <input type="text" placeholder="搜索IP地址..." 
+                        class="pl-10 pr-4 py-2 rounded-lg border border-light-2 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all w-full md:w-64">
+                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-dark-2"></i>
+                </div>
+                
+                <button id="refresh-btn" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-light-1 hover:bg-light-2 transition-colors">
+                    <i class="fa fa-refresh"></i>
+                    <span>刷新</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="p-6 bg-white rounded-xl shadow-sm stat-card">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-dark-2 text-sm">当前限速数</p>
+                        <h3 class="text-3xl font-bold mt-2" id="current-limit-count">0</h3>
+                        <p class="text-success text-sm mt-2 flex items-center">
+                            <i class="fa fa-arrow-down mr-1"></i> 较昨日减少 12%
+                        </p>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <i class="fa fa-tachometer text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 bg-white rounded-xl shadow-sm stat-card">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-dark-2 text-sm">今日新增限速</p>
+                        <h3 class="text-3xl font-bold mt-2" id="today-limit-count">0</h3>
+                        <p class="text-danger text-sm mt-2 flex items-center">
+                            <i class="fa fa-arrow-up mr-1"></i> 较昨日增加 8%
+                        </p>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-warning/10 flex items-center justify-center text-warning">
+                        <i class="fa fa-plus-circle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 bg-white rounded-xl shadow-sm stat-card">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-dark-2 text-sm">主要限速原因</p>
+                        <h3 class="text-xl font-bold mt-2" id="main-reason">SYN Flood</h3>
+                        <p class="text-dark-2 text-sm mt-2">占比 42% 的限速事件</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+                        <i class="fa fa-bar-chart text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 bg-white rounded-xl shadow-sm stat-card">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-dark-2 text-sm">高频限速IP</p>
+                        <h3 class="text-xl font-bold mt-2" id="top-ip">192.168.1.105</h3>
+                        <p class="text-dark-2 text-sm mt-2">今日被限速 12 次</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-full bg-danger/10 flex items-center justify-center text-danger">
+                        <i class="fa fa-exclamation-triangle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 p-6 bg-white rounded-xl shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="font-semibold text-lg">限速趋势 (24小时)</h3>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 text-sm rounded bg-primary/10 text-primary">小时</button>
+                        <button class="px-3 py-1 text-sm rounded bg-light-1 text-dark-2">天</button>
+                        <button class="px-3 py-1 text-sm rounded bg-light-1 text-dark-2">周</button>
+                    </div>
+                </div>
+                <div class="h-80">
+                    <canvas id="rateLimitTrend"></canvas>
+                </div>
+            </div>
+            
+            <div class="p-6 bg-white rounded-xl shadow-sm">
+                <h3 class="font-semibold text-lg mb-6">限速原因分布</h3>
+                <div class="h-80">
+                    <canvas id="reasonDistribution"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 网络流量图表 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 p-6 bg-white rounded-xl shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="font-semibold text-lg">网络流量趋势</h3>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 text-sm rounded bg-primary/10 text-primary">今日</button>
+                        <button class="px-3 py-1 text-sm rounded bg-light-1 text-dark-2">本周</button>
+                        <button class="px-3 py-1 text-sm rounded bg-light-1 text-dark-2">本月</button>
+                    </div>
+                </div>
+                <div class="h-80">
+                    <canvas id="networkTrafficTrend"></canvas>
+                </div>
+            </div>
+            
+            <div class="p-6 bg-white rounded-xl shadow-sm">
+                <h3 class="font-semibold text-lg mb-6">协议分布</h3>
+                <div class="h-80">
+                    <canvas id="protocolDistribution"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 标签页切换 -->
+        <div class="border-b border-light-2 mb-6">
+            <div class="flex space-x-8">
+                <button class="pb-4 border-b-2 border-primary text-primary font-medium" id="current-limits-tab">当前限速</button>
+                <button class="pb-4 border-b-2 border-transparent text-dark-2 hover:text-primary transition-colors" id="history-tab">限速历史</button>
+            </div>
+        </div>
+        
+        <!-- 当前限速列表 -->
+        <div id="current-limits-section" class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-semibold text-lg">当前生效的限速规则</h3>
+                <button class="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    <i class="fa fa-plus"></i>
+                    <span>手动添加限速</span>
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-light-2">
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">IP地址</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">限速档位</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">剩余时间</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">原因</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">开始时间</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="current-limits-table">
+                        <!-- 动态填充当前限速数据 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-6 flex justify-between items-center">
+                <p class="text-dark-2 text-sm">显示 1 至 5 条，共 <span id="current-total">0</span> 条</p>
+                <div class="flex space-x-2">
+                    <button class="w-8 h-8 flex items-center justify-center rounded border border-light-2 text-dark-2 hover:border-primary hover:text-primary transition-colors disabled:opacity-50" disabled>
+                        <i class="fa fa-chevron-left"></i>
+                    </button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded bg-primary text-white">1</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded border border-light-2 text-dark-2 hover:border-primary hover:text-primary transition-colors">2</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded border border-light-2 text-dark-2 hover:border-primary hover:text-primary transition-colors">3</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded border border-light-2 text-dark-2 hover:border-primary hover:text-primary transition-colors">
+                        <i class="fa fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 限速历史记录 -->
+        <div id="history-section" class="hidden bg-white rounded-xl shadow-sm p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-semibold text-lg">限速历史记录</h3>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <select class="pl-4 pr-10 py-2 rounded-lg border border-light-2 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none bg-white">
+                            <option>全部原因</option>
+                            <option>SYN Flood</option>
+                            <option>UDP Flood</option>
+                            <option>ICMP Flood</option>
+                            <option>ARP 欺骗</option>
+                        </select>
+                        <i class="fa fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-dark-2 pointer-events-none"></i>
+                    </div>
+                    
+                    <button class="p-2 rounded-lg border border-light-2 hover:bg-light-1 transition-colors">
+                        <i class="fa fa-download text-dark-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-light-2">
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">IP地址</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">限速档位</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">持续时间</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">原因</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">开始时间</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">结束时间</th>
+                            <th class="text-left py-4 px-4 font-semibold text-dark-2">状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table">
+                        <!-- 动态填充历史记录数据 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-6 flex justify-between items-center">
+                <p class="text-dark-2 text-sm">显示 1 至 10 条，共 <span id="history-total">0</span> 条</p>
+                <div class="flex space-x-2">
+                    <button class="w-8 h-8 flex items-center justify-center rounded border border-light-2 text-dark-2 hover:border-primary hover:text-primary transition-colors disabled:opacity-50" disabled>
+                        <i class="fa fa-chevron-left"></i>
+                    </button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded bg-primary text-white">1</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded border border-light-2 text-dark-2 hover:border-primary hover:text-primary transition-colors">2</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded border border-light-2 text-dark-2 hover:border-primary hover:text-primary transition-colors">3</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded border border-light-2 text-dark-2 hover:border-primary hover:text-primary transition-colors">
+                        <i class="fa fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-gray-400 text-sm">© 2023 SDN 智能安全控制器. 保留所有权利.</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-question-circle"></i> 帮助中心
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-file-text-o"></i> 文档
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-envelope-o"></i> 联系我们
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 手动添加限速模态框 -->
+    <div id="add-limit-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center">
+        <div class="bg-white rounded-xl w-full max-w-md p-6 transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">添加手动限速</h3>
+                <button id="close-modal" class="text-dark-2 hover:text-dark transition-colors">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="add-limit-form">
+                <div class="mb-4">
+                    <label class="block text-dark-2 mb-2 text-sm">IP地址</label>
+                    <input type="text" placeholder="例如: 192.168.1.100" 
+                        class="w-full px-4 py-2 rounded-lg border border-light-2 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-dark-2 mb-2 text-sm">限速档位</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button type="button" class="py-2 rounded-lg border border-primary bg-primary/10 text-primary font-medium">低速 (256kbps)</button>
+                        <button type="button" class="py-2 rounded-lg border border-light-2 hover:border-primary hover:bg-primary/5 transition-colors">中速 (1024kbps)</button>
+                        <button type="button" class="py-2 rounded-lg border border-light-2 hover:border-primary hover:bg-primary/5 transition-colors">高速 (2048kbps)</button>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-dark-2 mb-2 text-sm">持续时间</label>
+                    <select class="w-full px-4 py-2 rounded-lg border border-light-2 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all appearance-none bg-white">
+                        <option>5分钟</option>
+                        <option>15分钟</option>
+                        <option>30分钟</option>
+                        <option>1小时</option>
+                        <option>自定义...</option>
+                    </select>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-dark-2 mb-2 text-sm">限速原因</label>
+                    <textarea placeholder="请输入限速原因..." rows="3" 
+                        class="w-full px-4 py-2 rounded-lg border border-light-2 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"></textarea>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" id="cancel-add" class="flex-1 py-2 rounded-lg border border-light-2 hover:bg-light-1 transition-colors">取消</button>
+                    <button type="submit" class="flex-1 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors">确认添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 真实数据将通过API从后端获取
+        const currentLimits = [];
+        const historyRecords = [];
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从后端API获取真实数据
+            loadRealData();
+            
+            // 标签页切换
+            document.getElementById('current-limits-tab').addEventListener('click', function() {
+                showCurrentLimits();
+            });
+            
+            document.getElementById('history-tab').addEventListener('click', function() {
+                showHistory();
+            });
+            
+            // 刷新按钮
+            document.getElementById('refresh-btn').addEventListener('click', function() {
+                const btn = this;
+                btn.querySelector('i').classList.add('fa-spin');
+                setTimeout(() => {
+                    btn.querySelector('i').classList.remove('fa-spin');
+                    // 刷新数据
+                    loadRealData();
+                }, 800);
+            });
+            
+            // 模态框控制
+            document.querySelector('button:has(.fa-plus)').addEventListener('click', function() {
+                document.getElementById('add-limit-modal').classList.remove('hidden');
+                document.getElementById('add-limit-modal').classList.add('flex');
+            });
+            
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('cancel-add').addEventListener('click', closeModal);
+            
+            function closeModal() {
+                document.getElementById('add-limit-modal').classList.add('hidden');
+                document.getElementById('add-limit-modal').classList.remove('flex');
+            }
+        });
+
+        // 从后端API加载真实数据
+        function loadRealData() {
+            // 这里将调用后端API获取真实数据
+            // 当前暂时显示空数据
+            renderCurrentLimits([]);
+            renderHistoryRecords([]);
+            updateStats();
+            initCharts();
+        }
+
+        // 渲染当前限速列表
+        function renderCurrentLimits(limits) {
+            const tableBody = document.getElementById('current-limits-table');
+            tableBody.innerHTML = '';
+            
+            if (limits.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="6" class="py-10 text-center text-gray-500">
+                        <i class="fa fa-check-circle text-green-500 text-3xl mb-3"></i>
+                        <p>当前没有限速主机</p>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                document.getElementById('current-total').textContent = '0';
+                document.getElementById('current-limit-count').textContent = '0';
+                return;
+            }
+            
+            // 如果有真实数据，这里会渲染真实数据
+            // 目前暂时为空
+            document.getElementById('current-total').textContent = limits.length;
+            document.getElementById('current-limit-count').textContent = limits.length;
+        }
+
+        // 渲染历史记录
+        function renderHistoryRecords(records) {
+            const tableBody = document.getElementById('history-table');
+            tableBody.innerHTML = '';
+            
+            if (records.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="7" class="py-10 text-center text-gray-500">
+                        <i class="fa fa-clock text-gray-400 text-3xl mb-3"></i>
+                        <p>暂无历史限速记录</p>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                document.getElementById('history-total').textContent = '0';
+                return;
+            }
+            
+            // 如果有真实数据，这里会渲染真实数据
+            // 目前暂时为空
+            document.getElementById('history-total').textContent = records.length;
+        }
+
+        // 初始化图表
+        function initCharts() {
+            // 限速趋势图
+            const trendCtx = document.getElementById('rateLimitTrend').getContext('2d');
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                    datasets: [{
+                        label: '当前限速数',
+                        data: [3, 2, 1, 5, 8, 6, 4, 5],
+                        borderColor: '#165DFF',
+                        backgroundColor: 'rgba(22, 93, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: '新增限速数',
+                        data: [1, 0, 1, 3, 4, 2, 1, 2],
+                        borderColor: '#36CFC9',
+                        backgroundColor: 'transparent',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    animations: {
+                        tension: {
+                            duration: 1000,
+                            easing: 'linear'
+                        }
+                    }
+                }
+            });
+            
+            // 原因分布图
+            const reasonCtx = document.getElementById('reasonDistribution').getContext('2d');
+            new Chart(reasonCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['SYN Flood', 'UDP Flood', 'ICMP Flood', 'ARP 欺骗', '手动限速'],
+                    datasets: [{
+                        data: [42, 23, 15, 12, 8],
+                        backgroundColor: [
+                            '#165DFF',
+                            '#36CFC9',
+                            '#FF7D00',
+                            '#F53F3F',
+                            '#722ED1'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    },
+                    cutout: '70%',
+                    animations: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            });
+            
+            // 网络流量趋势图
+            const trafficCtx = document.getElementById('networkTrafficTrend').getContext('2d');
+            new Chart(trafficCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                    datasets: [{
+                        label: '流入流量 (Mbps)',
+                        data: [25, 18, 30, 45, 60, 55, 70, 65],
+                        borderColor: '#165DFF',
+                        backgroundColor: 'transparent',
+                        tension: 0.4
+                    }, {
+                        label: '流出流量 (Mbps)',
+                        data: [15, 10, 20, 35, 40, 30, 45, 40],
+                        borderColor: '#36CFC9',
+                        backgroundColor: 'transparent',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+            
+            // 协议分布图
+            const protocolCtx = document.getElementById('protocolDistribution').getContext('2d');
+            new Chart(protocolCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['TCP', 'UDP', 'ICMP', 'ARP', '其他'],
+                    datasets: [{
+                        data: [60, 25, 8, 5, 2],
+                        backgroundColor: [
+                            '#165DFF',
+                            '#36CFC9',
+                            '#FF7D00',
+                            '#F53F3F',
+                            '#86909C'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    },
+                    animations: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            });
+        }
+
+        // 更新统计数据
+        function updateStats() {
+            document.getElementById('today-limit-count').textContent = Math.floor(Math.random() * 10) + 5;
+            document.getElementById('main-reason').textContent = "SYN Flood";
+            document.getElementById('top-ip').textContent = "192.168.1.105";
+        }
+
+        // 显示当前限速标签页
+        function showCurrentLimits() {
+            document.getElementById('current-limits-section').classList.remove('hidden');
+            document.getElementById('history-section').classList.add('hidden');
+            
+            document.getElementById('current-limits-tab').classList.add('border-primary', 'text-primary');
+            document.getElementById('current-limits-tab').classList.remove('border-transparent', 'text-dark-2');
+            
+            document.getElementById('history-tab').classList.add('border-transparent', 'text-dark-2');
+            document.getElementById('history-tab').classList.remove('border-primary', 'text-primary');
+        }
+
+        // 显示历史记录标签页
+        function showHistory() {
+            document.getElementById('current-limits-section').classList.add('hidden');
+            document.getElementById('history-section').classList.remove('hidden');
+            
+            document.getElementById('history-tab').classList.add('border-primary', 'text-primary');
+            document.getElementById('history-tab').classList.remove('border-transparent', 'text-dark-2');
+            
+            document.getElementById('current-limits-tab').classList.add('border-transparent', 'text-dark-2');
+            document.getElementById('current-limits-tab').classList.remove('border-primary', 'text-primary');
+        }
+    </script>
+</body>
+</html>
+    

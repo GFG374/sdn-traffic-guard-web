@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { UserStore, User } from './types'
 
+// API基础路径配置
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
 // 认证状态接口定义
 
 export const useUserStore = defineStore('user', (): UserStore => {
@@ -72,7 +75,7 @@ export const useUserStore = defineStore('user', (): UserStore => {
   const login = async (username: string, password: string): Promise<{ success: boolean; message: string }> => {
     try {
       // 调用后端API登录
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,9 +83,24 @@ export const useUserStore = defineStore('user', (): UserStore => {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json()
+      // 检查响应是否为空或无效
+      if (!response.ok) {
+        return { success: false, message: '登录失败，请检查网络连接' }
+      }
+
+      let data
+      try {
+        const text = await response.text()
+        if (!text.trim()) {
+          return { success: false, message: '服务器响应为空' }
+        }
+        data = JSON.parse(text)
+      } catch (jsonError) {
+        console.error('JSON解析错误:', jsonError)
+        return { success: false, message: '服务器响应格式错误' }
+      }
       
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         return { success: false, message: data.message || '用户名或密码错误' }
       }
 
@@ -124,7 +142,7 @@ export const useUserStore = defineStore('user', (): UserStore => {
         registerData.avatar = avatar
       }
 
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +189,7 @@ export const useUserStore = defineStore('user', (): UserStore => {
   // 忘记密码
   const forgotPassword = async (username: string, email: string): Promise<{ success: boolean; message: string; resetToken?: string }> => {
     try {
-      const response = await fetch('/api/auth/forgot-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -199,7 +217,7 @@ export const useUserStore = defineStore('user', (): UserStore => {
   // 重置密码
   const resetPassword = async (token: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await fetch('/api/auth/reset-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -223,7 +241,7 @@ export const useUserStore = defineStore('user', (): UserStore => {
   // 验证重置token
   const verifyResetToken = async (token: string): Promise<{ success: boolean; message: string; userId?: string }> => {
     try {
-      const response = await fetch('/api/auth/verify-reset-token', {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-reset-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -314,10 +332,20 @@ export const useUserStore = defineStore('user', (): UserStore => {
         }
       })
 
-      const data = await response.json()
-      
       if (!response.ok) {
-        return { success: false, message: data.detail || '获取用户信息失败' }
+        return { success: false, message: '获取用户信息失败' }
+      }
+
+      let data
+      try {
+        const text = await response.text()
+        if (!text.trim()) {
+          return { success: false, message: '服务器响应为空' }
+        }
+        data = JSON.parse(text)
+      } catch (jsonError) {
+        console.error('获取用户头像失败:', jsonError)
+        return { success: false, message: '服务器响应格式错误' }
       }
       
       // 更新本地用户信息

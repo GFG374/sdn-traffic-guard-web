@@ -8,7 +8,7 @@
           </svg>
         </div>
         <h2 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          网络管理平台
+          基于SDN的流量检测与监控系统
         </h2>
         <p class="mt-3 text-center text-sm text-gray-600">
           安全高效的网络设备管理系统

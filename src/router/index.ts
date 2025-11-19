@@ -51,21 +51,21 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/acl',
-    name: 'ACL',
-    component: () => import('../components/ACL/ACL.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/flowstats',
-    name: 'FlowStats',
-    component: () => import('../components/FlowStats/FlowStats.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/ai-assistant',
     name: 'AIAssistant',
     component: () => import('../components/AIAssistant/AIAssistant.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/flowtable',
+    name: 'FlowTable',
+    component: () => import('../components/FlowTable/FlowTable.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/knowledge',
+    name: 'Knowledge',
+    component: () => import('../components/KnowledgeUpload/KnowledgeUpload.vue'),
     meta: { requiresAuth: true }
   },
   {

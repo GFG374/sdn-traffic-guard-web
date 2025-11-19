@@ -11,7 +11,7 @@
         <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white">
           <i class="fas fa-server text-xl"></i>
         </div>
-        <h1 v-if="isOpen" class="text-xl font-bold text-gray-800">网络管理平台</h1>
+        <h1 v-if="isOpen" class="text-xl font-bold text-gray-800">基于SDN的流量检测与监控系统</h1>
       </div>
       <button 
         class="text-gray-600 hover:text-blue-600 p-2 transition-colors duration-300"
@@ -26,12 +26,23 @@
       <ul>
         <li class="mb-1">
           <router-link 
+            to="/flowmaster"
+            class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
+            :class="$route.path === '/flowmaster' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
+          >
+            <i class="fas fa-network-wired text-lg w-6 text-center"></i>
+            <span v-if="isOpen" class="ml-3">流量监控</span>
+          </router-link>
+        </li>
+        
+        <li class="mb-1">
+          <router-link 
             to="/dashboard"
             class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
             :class="$route.path === '/dashboard' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
           >
             <i class="fas fa-tachometer-alt text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">总览</span>
+            <span v-if="isOpen" class="ml-3">数据总览</span>
           </router-link>
         </li>
         
@@ -54,28 +65,6 @@
           >
             <i class="fas fa-tachometer-alt text-lg w-6 text-center"></i>
             <span v-if="isOpen" class="ml-3">限速中心</span>
-          </router-link>
-        </li>
-        
-        <li class="mb-1">
-          <router-link 
-            to="/acl"
-            class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-            :class="$route.path === '/acl' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
-          >
-            <i class="fas fa-ban text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">ACL管理</span>
-          </router-link>
-        </li>
-        
-        <li class="mb-1">
-          <router-link 
-            to="/flowstats"
-            class="flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-300"
-            :class="$route.path === '/flowstats' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : ''"
-          >
-            <i class="fas fa-chart-line text-lg w-6 text-center"></i>
-            <span v-if="isOpen" class="ml-3">流量统计</span>
           </router-link>
         </li>
         
