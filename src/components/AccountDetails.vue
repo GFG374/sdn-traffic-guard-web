@@ -25,73 +25,49 @@
               <!-- 用户名 -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
-                <input 
-                  v-model="userInfo.username" 
-                  type="text" 
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 cursor-not-allowed"
-                  readonly
-                />
-                <p class="text-xs text-gray-500 mt-1">用户名不可修改</p>
-              </div>
-
-              <!-- 邮箱 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">邮箱地址</label>
-                <input 
-                  v-model="userInfo.email" 
-                  type="email" 
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
-                  :readonly="!editingEmail"
-                  :class="{ 'bg-gray-50 cursor-not-allowed': !editingEmail, 'bg-white': editingEmail }"
-                />
-                <div class="flex justify-between items-center mt-2">
-                  <p class="text-xs text-gray-500">用于接收通知和密码重置</p>
-                  <button 
-                    @click="toggleEditEmail"
-                    class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-                  >
-                    {{ editingEmail ? '取消' : '编辑' }}
-                  </button>
+                <div class="w-full px-4 py-3 rounded-lg border border-gray-100 bg-gray-50 flex items-center justify-between">
+                  <div class="flex items-center space-x-3">
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold text-lg">
+                      {{ userInfo.username?.charAt(0).toUpperCase() || 'U' }}
+                    </span>
+                    <div>
+                      <p class="text-gray-900 font-medium">{{ userInfo.username }}</p>
+                      <p class="text-xs text-gray-500">账号不可编辑</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <!-- 角色 -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">账号类型</label>
-                <div class="px-4 py-3 rounded-lg border border-gray-300 bg-gray-50">
-                  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                        :class="userInfo.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">
-                    {{ userInfo.role === 'admin' ? '管理员' : '普通用户' }}
-                  </span>
+                <div class="px-4 py-3 rounded-lg border border-gray-100 bg-gray-50 flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
+                      <i class="fas fa-crown"></i>
+                    </span>
+                    <div>
+                      <p class="text-gray-900 font-semibold">管理员</p>
+                      <p class="text-xs text-gray-500">默认授予全部控制权限</p>
+                    </div>
+                  </div>
+                  <span class="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700">Admin</span>
                 </div>
               </div>
 
               <!-- 注册时间 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">注册时间</label>
-                <input 
-                  :value="formatDate(userInfo.createdAt)" 
-                  type="text" 
-                  class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 cursor-not-allowed"
-                  readonly
-                />
-              </div>
-
-              <!-- 保存按钮 -->
-              <div v-if="editingEmail" class="flex space-x-3">
-                <button 
-                  @click="saveEmail"
-                  :disabled="loading"
-                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                >
-                  保存邮箱
-                </button>
-                <button 
-                  @click="cancelEditEmail"
-                  class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  取消
-                </button>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 rounded-xl border border-gray-100 bg-gradient-to-br from-white to-indigo-50">
+                  <p class="text-sm text-gray-500 mb-1">注册时间</p>
+                  <p class="text-lg font-semibold text-gray-900">{{ formatDate(userInfo.createdAt) }}</p>
+                </div>
+                <div class="p-4 rounded-xl border border-gray-100 bg-gradient-to-br from-white to-purple-50">
+                  <p class="text-sm text-gray-500 mb-1">当前状态</p>
+                  <p class="text-lg font-semibold text-green-600 flex items-center space-x-2">
+                    <i class="fas fa-check-circle"></i>
+                    <span>活跃</span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -102,31 +78,19 @@
               <i class="fas fa-shield-alt mr-2 text-green-600"></i>
               安全设置
             </h3>
-            
+
             <div class="space-y-4">
               <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div>
                   <h4 class="font-medium text-gray-900">修改密码</h4>
                   <p class="text-sm text-gray-600">定期更新密码可以提高账号安全性</p>
                 </div>
-                <button 
+                <button
                 @click="navigateTo('/change-password')"
                 class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
               >
                 修改
               </button>
-              </div>
-
-              <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <h4 class="font-medium text-gray-900">登录历史</h4>
-                  <p class="text-sm text-gray-600">查看最近的登录活动</p>
-                </div>
-                <button 
-                  class="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  查看
-                </button>
               </div>
             </div>
           </div>
@@ -207,13 +171,10 @@ const userStore = useUserStore()
 // 状态
 const userInfo = ref({
   username: '',
-  email: '',
   role: 'user',
   createdAt: '',
   avatar: ''
 })
-const editingEmail = ref(false)
-const originalEmail = ref('')
 const loading = ref(false)
 const error = ref<string>('')
 const success = ref<string>('')
@@ -244,49 +205,10 @@ const loadUserInfo = () => {
   if (userStore.user) {
     userInfo.value = {
       username: userStore.user.username,
-      email: userStore.user.email || '',
-      role: userStore.user.role,
+      role: userStore.user.role || 'admin',
       createdAt: userStore.user.createdAt,
       avatar: userStore.user.avatar || ''
     }
-    originalEmail.value = userInfo.value.email
-  }
-}
-
-// 切换邮箱编辑
-const toggleEditEmail = () => {
-  if (editingEmail.value) {
-    userInfo.value.email = originalEmail.value
-  }
-  editingEmail.value = !editingEmail.value
-}
-
-// 取消编辑邮箱
-const cancelEditEmail = () => {
-  userInfo.value.email = originalEmail.value
-  editingEmail.value = false
-}
-
-// 保存邮箱
-const saveEmail = async () => {
-  loading.value = true
-  error.value = ''
-  success.value = ''
-
-  try {
-    // 这里可以添加更新邮箱的API调用
-    // 为了演示，我们直接更新本地数据
-    if (userStore.user) {
-      userStore.user.email = userInfo.value.email
-      localStorage.setItem('currentUser', JSON.stringify(userStore.user))
-      originalEmail.value = userInfo.value.email
-      success.value = '邮箱地址更新成功！'
-      editingEmail.value = false
-    }
-  } catch (err) {
-    error.value = '更新邮箱失败，请重试'
-  } finally {
-    loading.value = false
   }
 }
 
