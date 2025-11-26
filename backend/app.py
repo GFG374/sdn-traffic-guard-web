@@ -24,16 +24,8 @@ Base.metadata.create_all(bind=engine)
 class UserCreate(BaseModel):
     username: str
     password: str
-    email: EmailStr = None
-    avatar: str = None
-    
-    @validator('email')
-    def validate_email_format(cls, v):
-        if v and '@qq.com' in str(v).lower():
-            local_part = str(v).split('@')[0]
-            if local_part and (len(local_part) < 3 or len(local_part) > 30):
-                raise ValueError('QQ邮箱格式不正确，用户名长度应在3-30位之间')
-        return v
+    email: EmailStr | None = None
+    avatar: str | None = None
 
 class UserLogin(BaseModel):
     username: str
@@ -120,7 +112,7 @@ def login(user_login: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == user_login.username).first()
     if not user or user.hashed_password != user_login.password:
         return {"success": False, "message": "用户名或密码错误"}
-    
+
     # 返回用户信息和token（这里简化处理，使用用户ID作为token）
     return {
         "success": True,
@@ -130,9 +122,9 @@ def login(user_login: UserLogin, db: Session = Depends(get_db)):
             "id": str(user.id),
             "username": user.username,
             "email": user.email,
-            "role": user.role,
+            "role": user.role or "admin",
             "avatar": user.avatar,
-            "created_at": user.created_at
+            "created_at": user.created_at.isoformat() if user.created_at else None
         }
     }
 
@@ -184,18 +176,12 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         if existing_user:
             raise HTTPException(status_code=400, detail="用户名已存在")
         
-        # 检查邮箱是否已存在（如果提供了邮箱）
-        if user.email:
-            existing_email = db.query(User).filter(User.email == user.email.strip()).first()
-            if existing_email:
-                raise HTTPException(status_code=400, detail="邮箱已被注册")
-        
         # 创建新用户
         new_user = User(
             username=user.username.strip(),
             hashed_password=user.password,  # 生产环境应使用哈希
             email=user.email.strip() if user.email else None,
-            role="user",
+            role="admin",
             avatar=user.avatar if user.avatar and user.avatar.strip() else None
         )
         
@@ -281,10 +267,9 @@ async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(
     # 生成重置token
     reset_token = str(uuid.uuid4())
     expires_at = datetime.utcnow() + timedelta(minutes=30)  # 30分钟后过期
-    
+
     # 保存token到数据库
     reset_entry = PasswordResetToken(
-        id=f"reset-{int(datetime.now().timestamp() * 1000)}-{str(uuid.uuid4())[:8]}",
         user_id=user.id,
         token=reset_token,
         expires_at=expires_at
@@ -337,7 +322,7 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
-    user.password = request.new_password  # 生产环境应使用哈希
+    user.hashed_password = request.new_password  # 生产环境应使用哈希
     reset_entry.used = True
     
     db.commit()
@@ -367,11 +352,11 @@ async def change_password(request: ChangePasswordRequest, db: Session = Depends(
     user_check = db.query(User).filter(User.username == request.username).first()
     if not user_check:
         raise HTTPException(status_code=404, detail="用户不存在")
-    
+
     # 验证密码
     user = db.query(User).filter(
         User.username == request.username,
-        User.password == request.old_password
+        User.hashed_password == request.old_password
     ).first()
     
     if not user:
