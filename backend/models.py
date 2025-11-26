@@ -1,10 +1,9 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey, LargeBinary
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 
-Base = declarative_base()
+from database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -15,7 +14,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(100))
     department = Column(String(100))
-    role = Column(String(50), default="user")
+    role = Column(String(50), default="admin")
     avatar = Column(String(500), nullable=True)  # 存储头像URL或Base64数据
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)

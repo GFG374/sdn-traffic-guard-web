@@ -111,8 +111,8 @@ export const useUserStore = defineStore('user', (): UserStore => {
         password: password, // 注意：实际项目中不应该存储明文密码
         email: data.user.email,
         avatar: data.user.avatar || 'bg-blue-500',
-        role: data.user.role,
-        createdAt: new Date().toISOString()
+        role: data.user.role || 'admin',
+        createdAt: data.user.created_at || new Date().toISOString()
       }
       // 使用后端返回的token或用户ID作为临时token
       token.value = data.token || data.user.id
