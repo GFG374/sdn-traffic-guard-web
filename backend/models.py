@@ -12,7 +12,8 @@ def generate_user_id():
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String(36), primary_key=True, index=True, default=generate_user_id)
+    # 兼容现有 MySQL users 表的 varchar 主键，统一长度以避免外键类型不匹配
+    id = Column(String(255), primary_key=True, index=True, default=generate_user_id)
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=True)
     hashed_password = Column(String(255), nullable=False)
@@ -40,7 +41,7 @@ class Device(Base):
     device_type = Column(String(50), nullable=False)
     location = Column(String(200))
     status = Column(String(20), default="offline")
-    user_id = Column(String(36), ForeignKey("users.id"))
+    user_id = Column(String(255), ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -50,7 +51,7 @@ class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(String(255), ForeignKey("users.id"), nullable=False, index=True)
     token = Column(String(255), unique=True, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     used = Column(Boolean, default=False)
@@ -63,7 +64,7 @@ class AIConversation(Base):
     __tablename__ = "ai_conversations"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(255), ForeignKey("users.id"), nullable=False)
     title = Column(String(200), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_message_at = Column(DateTime, default=datetime.utcnow)
@@ -87,7 +88,7 @@ class AIFile(Base):
     __tablename__ = "ai_files"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(255), ForeignKey("users.id"), nullable=False)
     filename = Column(String(255), nullable=False)
     content_type = Column(String(100), nullable=False)
     file_size = Column(Integer, nullable=False)
@@ -229,11 +230,12 @@ class BlacklistEntry(Base):
     description = Column(String(255), nullable=True)
     rule_type = Column(String(20), default="ip")  # ip, mac, ip_range
     is_active = Column(Boolean, default=True)
-    created_by = Column(Integer, ForeignKey("users.id"))
+    created_by = Column(String(255), ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     creator = relationship("User")
+
 
 class WhitelistEntry(Base):
     __tablename__ = "whitelist_entries"
@@ -244,7 +246,7 @@ class WhitelistEntry(Base):
     description = Column(String(255), nullable=True)
     rule_type = Column(String(20), default="ip")  # ip, mac, ip_range
     is_active = Column(Boolean, default=True)
-    created_by = Column(Integer, ForeignKey("users.id"))
+    created_by = Column(String(255), ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
