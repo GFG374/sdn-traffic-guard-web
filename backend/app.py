@@ -267,10 +267,9 @@ async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(
     # 生成重置token
     reset_token = str(uuid.uuid4())
     expires_at = datetime.utcnow() + timedelta(minutes=30)  # 30分钟后过期
-    
+
     # 保存token到数据库
     reset_entry = PasswordResetToken(
-        id=f"reset-{int(datetime.now().timestamp() * 1000)}-{str(uuid.uuid4())[:8]}",
         user_id=user.id,
         token=reset_token,
         expires_at=expires_at
