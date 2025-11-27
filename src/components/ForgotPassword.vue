@@ -1,232 +1,186 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div class="text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mb-4">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-          </svg>
+  <div class="min-h-screen flex items-center justify-center bg-slate-50">
+    <div class="w-full max-w-4xl px-4">
+      <div class="flex flex-col md:flex-row bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+        <!-- 左侧品牌/介绍 -->
+        <div class="hidden md:flex md:w-1/2 flex-col justify-between bg-gradient-to-b from-white to-slate-50 p-10">
+          <div class="space-y-4">
+            <p class="text-xs font-semibold text-primary tracking-[0.25em] uppercase">SDN 平台</p>
+            <h1 class="text-3xl xl:text-4xl font-black text-dark leading-snug">流量检测与监控系统</h1>
+            <p class="text-sm text-dark-2 leading-relaxed">
+              找回或修改密码，保持账号安全。界面与登录保持一致，减少操作成本。
+            </p>
+          </div>
+          <div class="mt-8 space-y-2 text-xs text-dark-2">
+            <p class="font-medium text-dark">· 自助找回/重置 ·</p>
+            <p>· 统一体验，快速完成 ·</p>
+          </div>
         </div>
-        <h2 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          密码管理
-        </h2>
-        <p class="mt-3 text-center text-sm text-gray-600">
-          找回或修改您的账户密码
-        </p>
-      </div>
 
-      <!-- 标签页切换 -->
-      <div class="flex bg-gray-100 rounded-lg p-1">
-        <button
-          @click="activeTab = 'recover'"
-          :class="[
-            activeTab === 'recover' 
-              ? 'bg-white text-indigo-600 shadow-sm' 
-              : 'text-gray-500 hover:text-gray-700',
-            'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200'
-          ]"
-        >
-          找回密码
-        </button>
-        <button
-          @click="activeTab = 'change'"
-          :class="[
-            activeTab === 'change' 
-              ? 'bg-white text-indigo-600 shadow-sm' 
-              : 'text-gray-500 hover:text-gray-700',
-            'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200'
-          ]"
-        >
-          修改密码
-        </button>
-      </div>
+        <!-- 右侧表单 -->
+        <div class="w-full md:w-1/2 p-7 md:p-10">
+          <!-- 顶部标题（移动端） -->
+          <div class="md:hidden mb-6">
+            <p class="text-[10px] font-semibold text-primary tracking-[0.25em] uppercase">SDN 平台</p>
+            <h1 class="mt-2 text-2xl font-black text-dark leading-snug">流量检测与监控系统</h1>
+            <p class="text-sm text-dark-2 mt-2">密码管理</p>
+          </div>
 
-      <!-- 找回密码表单 -->
-      <form v-if="activeTab === 'recover'" class="mt-8 space-y-6" @submit.prevent="handleGetPassword">
-        <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-100">
-          <div class="space-y-5">
+          <!-- 找回 / 修改 切换 -->
+          <div class="mb-6">
+            <div class="inline-flex bg-slate-100 rounded-full p-1">
+              <button
+                type="button"
+                class="px-4 py-1.5 text-xs font-medium rounded-full transition-all"
+                :class="activeTab === 'recover' ? 'bg-white shadow-sm text-dark' : 'text-dark-2'"
+                @click="activeTab = 'recover'"
+              >
+                找回密码
+              </button>
+              <button
+                type="button"
+                class="px-4 py-1.5 text-xs font-medium rounded-full transition-all"
+                :class="activeTab === 'change' ? 'bg-white shadow-sm text-dark' : 'text-dark-2'"
+                @click="activeTab = 'change'"
+              >
+                修改密码
+              </button>
+            </div>
+            <p class="mt-4 text-sm text-dark-2">
+              {{ activeTab === 'recover' ? '找回已有账号的密码' : '修改已登录账号的密码' }}
+            </p>
+          </div>
+
+          <!-- 提示信息 -->
+          <div v-if="recoverError || changeError" class="mb-4">
+            <div class="flex items-start space-x-2 text-sm rounded-2xl px-4 py-3 bg-red-50 text-red-600">
+              <svg class="w-5 h-5 mt-0.5" viewBox="0 0 24 24" fill="none">
+                <path d="M12 9v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <circle cx="12" cy="16" r="1" fill="currentColor" />
+                <path d="M12 4L3 20h18L12 4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+              <p>{{ recoverError || changeError }}</p>
+            </div>
+          </div>
+
+          <div v-if="recoverSuccess || changeSuccess" class="mb-4">
+            <div class="flex items-start space-x-2 text-sm rounded-2xl px-4 py-3 bg-emerald-50 text-emerald-600">
+              <svg class="w-5 h-5 mt-0.5" viewBox="0 0 24 24" fill="none">
+                <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <p>{{ recoverSuccess || changeSuccess }}</p>
+            </div>
+          </div>
+
+          <!-- 找回密码表单 -->
+          <form v-if="activeTab === 'recover'" class="space-y-5" @submit.prevent="handleGetPassword">
             <div>
-              <label for="recover-username" class="block text-sm font-medium text-gray-700 mb-2">
-                用户名
-              </label>
+              <label for="recover-username" class="flex items-center text-xs font-medium text-dark mb-1.5">用户名</label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M4 20c0-3.314 3.134-6 7-6h2c3.866 0 7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </div>
                 <input
                   id="recover-username"
                   v-model="recoverUsername"
-                  name="username"
                   type="text"
                   required
-                  class="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   placeholder="请输入用户名"
                 />
               </div>
             </div>
 
-            <div v-if="recoverError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm text-center">
-              <div class="flex items-center justify-center">
-                <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                {{ recoverError }}
-              </div>
+            <div v-if="showPassword" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <p class="text-dark font-medium">您的密码是：</p>
+              <p class="text-primary font-bold text-lg mt-1 break-all">{{ showPassword }}</p>
             </div>
 
-            <div v-if="recoverSuccess" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm text-center">
-              <div class="flex items-center justify-center">
-                <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
-                {{ recoverSuccess }}
-              </div>
-            </div>
+            <button
+              type="submit"
+              :disabled="loading"
+              class="w-full flex justify-center items-center rounded-2xl bg-primary text-white text-sm font-semibold py-2.5 shadow-sm hover:bg-primary/90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <span v-if="loading" class="mr-2 inline-block h-4 w-4 animate-spin border-2 border-white/50 border-t-transparent rounded-full"></span>
+              <span>{{ loading ? '查询中...' : '找回密码' }}</span>
+            </button>
+          </form>
 
-            <div v-if="showPassword" class="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
-              <div class="flex items-center">
-                <svg class="h-5 w-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                </svg>
-                <div>
-                  <p class="text-sm font-medium text-gray-700">您的密码是：</p>
-                  <p class="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">{{ showPassword }}</p>
-                </div>
-              </div>
-            </div>
-
+          <!-- 修改密码表单 -->
+          <form v-else class="space-y-5" @submit.prevent="handleChangePassword">
             <div>
-              <button
-                type="submit"
-                :disabled="loading"
-                class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                  <svg class="h-5 w-5 text-white group-hover:text-indigo-100 transition-colors duration-200" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" clip-rule="evenodd" />
-                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </span>
-                {{ loading ? '查询中...' : '找回密码' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </form>
-
-      <!-- 修改密码表单 -->
-      <form v-if="activeTab === 'change'" class="mt-8 space-y-6" @submit.prevent="handleChangePassword">
-        <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-100">
-          <div class="space-y-5">
-            <div>
-              <label for="change-username" class="block text-sm font-medium text-gray-700 mb-2">
-                用户名
-              </label>
+              <label for="change-username" class="flex items-center text-xs font-medium text-dark mb-1.5">用户名</label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M4 20c0-3.314 3.134-6 7-6h2c3.866 0 7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </div>
                 <input
                   id="change-username"
                   v-model="changeUsername"
-                  name="username"
                   type="text"
                   required
-                  class="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   placeholder="请输入用户名"
                 />
               </div>
             </div>
-            
+
             <div>
-              <label for="old-password" class="block text-sm font-medium text-gray-700 mb-2">
-                原密码
-              </label>
+              <label for="old-password" class="flex items-center text-xs font-medium text-dark mb-1.5">原密码</label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <rect x="4" y="9" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M9 9V7a3 3 0 013-3v0a3 3 0 013 3v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                   </svg>
                 </div>
                 <input
                   id="old-password"
                   v-model="oldPassword"
-                  name="old-password"
                   type="password"
                   required
-                  class="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   placeholder="请输入原密码"
                 />
               </div>
             </div>
-            
+
             <div>
-              <label for="new-password" class="block text-sm font-medium text-gray-700 mb-2">
-                新密码
-              </label>
+              <label for="new-password" class="flex items-center text-xs font-medium text-dark mb-1.5">新密码</label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <rect x="4" y="9" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M9 9V7a3 3 0 013-3v0a3 3 0 013 3v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                   </svg>
                 </div>
                 <input
                   id="new-password"
                   v-model="newPassword"
-                  name="new-password"
                   type="password"
                   required
-                  class="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   placeholder="请输入新密码"
                 />
               </div>
             </div>
-          </div>
 
-          <div v-if="changeError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm text-center">
-            <div class="flex items-center justify-center">
-              <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-              </svg>
-              {{ changeError }}
-            </div>
-          </div>
-          
-          <div v-if="changeSuccess" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm text-center">
-            <div class="flex items-center justify-center">
-              <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-              </svg>
-              {{ changeSuccess }}
-            </div>
-          </div>
-
-          <div>
             <button
               type="submit"
               :disabled="loading"
-              class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+              class="w-full flex justify-center items-center rounded-2xl bg-primary text-white text-sm font-semibold py-2.5 shadow-sm hover:bg-primary/90 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                <svg class="h-5 w-5 text-white group-hover:text-indigo-100 transition-colors duration-200" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
-              </span>
-              {{ loading ? '修改中...' : '修改密码' }}
+              <span v-if="loading" class="mr-2 inline-block h-4 w-4 animate-spin border-2 border-white/50 border-t-transparent rounded-full"></span>
+              <span>{{ loading ? '修改中...' : '修改密码' }}</span>
             </button>
-          </div>
+          </form>
         </div>
-      </form>
-
-      <div class="text-center">
-        <router-link to="/login" class="text-indigo-600 hover:text-indigo-500 text-sm font-medium transition-colors duration-200 hover:underline">
-          返回登录
-        </router-link>
       </div>
     </div>
   </div>
@@ -238,16 +192,13 @@ import { useUserStore } from '../stores/user'
 
 const userStore = useUserStore()
 
-// 标签页状态
 const activeTab = ref<'recover' | 'change'>('recover')
 
-// 找回密码相关状态
 const recoverUsername = ref('')
 const recoverError = ref('')
 const recoverSuccess = ref('')
 const showPassword = ref('')
 
-// 修改密码相关状态
 const changeUsername = ref('')
 const oldPassword = ref('')
 const newPassword = ref('')
@@ -256,7 +207,6 @@ const changeSuccess = ref('')
 
 const loading = ref(false)
 
-// 找回密码功能
 const handleGetPassword = async () => {
   loading.value = true
   recoverError.value = ''
@@ -277,7 +227,7 @@ const handleGetPassword = async () => {
       recoverSuccess.value = '密码获取成功！请妥善保管您的密码'
     } else {
       recoverError.value = result.message || '获取密码失败'
-      if (result.message.includes('用户不存在')) {
+      if (result.message?.includes('用户不存在')) {
         recoverError.value = '用户不存在，请检查用户名是否正确'
       }
     }
@@ -288,7 +238,6 @@ const handleGetPassword = async () => {
   }
 }
 
-// 修改密码功能
 const handleChangePassword = async () => {
   loading.value = true
   changeError.value = ''
@@ -327,12 +276,11 @@ const handleChangePassword = async () => {
     
     if (result.success) {
       changeSuccess.value = '密码修改成功！请使用新密码登录'
-      // 清空表单
       oldPassword.value = ''
       newPassword.value = ''
     } else {
       changeError.value = result.message || '密码修改失败'
-      if (result.message.includes('用户名或原密码错误')) {
+      if (result.message?.includes('用户名或原密码错误')) {
         changeError.value = '用户名或原密码错误，请检查后重试'
       }
     }

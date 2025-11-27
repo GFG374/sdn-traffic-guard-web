@@ -1,125 +1,134 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-      <!-- 标题 -->
-      <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mb-4">
-          <i class="fas fa-key text-white text-2xl"></i>
+  <div class="min-h-screen flex items-center justify-center bg-slate-50">
+    <div class="w-full max-w-4xl px-4">
+      <div class="flex flex-col md:flex-row bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+        <!-- 左侧品牌/介绍 -->
+        <div class="hidden md:flex md:w-1/2 flex-col justify-between bg-gradient-to-b from-white to-slate-50 p-10">
+          <div class="space-y-4">
+            <p class="text-xs font-semibold text-primary tracking-[0.25em] uppercase">SDN 平台</p>
+            <h1 class="text-3xl xl:text-4xl font-black text-dark leading-snug">流量检测与监控系统</h1>
+            <p class="text-sm text-dark-2 leading-relaxed">
+              修改登录密码，提升账号安全。与登录页面统一的布局，更易操作。
+            </p>
+          </div>
+          <div class="mt-8 space-y-2 text-xs text-dark-2">
+            <p class="font-medium text-dark">· 强密码建议 ·</p>
+            <p>· 保持定期修改，避免重复使用 ·</p>
+          </div>
         </div>
-        <h2 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-          修改密码
-        </h2>
-        <p class="text-gray-600">请设置一个安全的新密码</p>
-      </div>
 
-      <!-- 表单卡片 -->
-      <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8">
-        <form @submit.prevent="handleChangePassword" class="space-y-6">
-          <!-- 原密码 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              原密码
-            </label>
-            <div class="relative">
-              <input 
-                v-model="oldPassword" 
-                :type="showOldPassword ? 'text' : 'password'"
-                placeholder="请输入原密码"
-                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
-                required
-              />
-              <button 
-                type="button"
-                @click="showOldPassword = !showOldPassword"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <i :class="showOldPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-              </button>
-            </div>
+        <!-- 右侧表单 -->
+        <div class="w-full md:w-1/2 p-7 md:p-10">
+          <!-- 顶部标题（移动端） -->
+          <div class="md:hidden mb-6">
+            <p class="text-[10px] font-semibold text-primary tracking-[0.25em] uppercase">SDN 平台</p>
+            <h1 class="mt-2 text-2xl font-black text-dark leading-snug">流量检测与监控系统</h1>
+            <p class="text-sm text-dark-2 mt-2">修改密码</p>
           </div>
 
-          <!-- 新密码 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              新密码
-            </label>
-            <div class="relative">
-              <input 
-                v-model="newPassword" 
-                :type="showNewPassword ? 'text' : 'password'"
-                placeholder="请输入新密码"
-                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
-                required
-                @input="validatePassword"
-              />
-              <button 
-                type="button"
-                @click="showNewPassword = !showNewPassword"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <i :class="showNewPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-              </button>
-            </div>
-            <div v-if="newPassword" class="mt-2 space-y-1">
-              <div class="text-xs flex items-center" :class="passwordValid.length ? 'text-green-600' : 'text-red-600'">
-                <i :class="passwordValid.length ? 'fas fa-check-circle' : 'fas fa-times-circle'" class="mr-1"></i>
-                至少6个字符
+          <!-- 表单 -->
+          <form @submit.prevent="handleChangePassword" class="space-y-5">
+            <div>
+              <label class="flex items-center text-xs font-medium text-dark mb-1.5">原密码</label>
+              <div class="relative">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2">
+                  <i class="fas fa-lock text-[14px]"></i>
+                </div>
+                <input
+                  v-model="oldPassword"
+                  :type="showOldPassword ? 'text' : 'password'"
+                  placeholder="请输入原密码"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 pr-10 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                  required
+                />
+                <button
+                  type="button"
+                  @click="showOldPassword = !showOldPassword"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-dark-2 hover:text-dark transition"
+                >
+                  <i :class="showOldPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
               </div>
             </div>
-          </div>
 
-          <!-- 确认新密码 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              确认新密码
-            </label>
-            <div class="relative">
-              <input 
-                v-model="confirmPassword" 
-                :type="showConfirmPassword ? 'text' : 'password'"
-                placeholder="请再次输入新密码"
-                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
-                required
-              />
-              <button 
-                type="button"
-                @click="showConfirmPassword = !showConfirmPassword"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            <div>
+              <label class="flex items-center text-xs font-medium text-dark mb-1.5">新密码</label>
+              <div class="relative">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2">
+                  <i class="fas fa-key text-[14px]"></i>
+                </div>
+                <input
+                  v-model="newPassword"
+                  :type="showNewPassword ? 'text' : 'password'"
+                  placeholder="请输入新密码"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 pr-10 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                  required
+                  @input="validatePassword"
+                />
+                <button
+                  type="button"
+                  @click="showNewPassword = !showNewPassword"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-dark-2 hover:text-dark transition"
+                >
+                  <i :class="showNewPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <div v-if="newPassword" class="mt-2 space-y-1">
+                <div class="text-xs flex items-center" :class="passwordValid.length ? 'text-emerald-600' : 'text-red-500'">
+                  <i :class="passwordValid.length ? 'fas fa-check-circle' : 'fas fa-times-circle'" class="mr-1"></i>
+                  至少6个字符
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="flex items-center text-xs font-medium text-dark mb-1.5">确认新密码</label>
+              <div class="relative">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2">
+                  <i class="fas fa-shield-alt text-[14px]"></i>
+                </div>
+                <input
+                  v-model="confirmPassword"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  placeholder="请再次输入新密码"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 pr-10 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                  required
+                />
+                <button
+                  type="button"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-dark-2 hover:text-dark transition"
+                >
+                  <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+            </div>
+
+            <div v-if="error" class="p-3 rounded-2xl bg-red-50 text-red-600 text-sm flex items-start space-x-2">
+              <i class="fas fa-exclamation-circle mt-0.5"></i>
+              <span>{{ error }}</span>
+            </div>
+
+            <div v-if="success" class="p-3 rounded-2xl bg-emerald-50 text-emerald-600 text-sm flex items-start space-x-2">
+              <i class="fas fa-check-circle mt-0.5"></i>
+              <span>{{ success }}</span>
+            </div>
+
+            <button
+              type="submit"
+              :disabled="loading || !isFormValid"
+              class="w-full flex justify-center items-center rounded-2xl bg-primary text-white text-sm font-semibold py-2.5 shadow-sm hover:bg-primary/90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <span v-if="loading" class="mr-2 inline-block h-4 w-4 animate-spin border-2 border-white/50 border-t-transparent rounded-full"></span>
+              <span>{{ loading ? '修改中...' : '确认修改' }}</span>
+            </button>
+
+            <div class="text-right text-xs text-dark-2">
+              <button type="button" class="hover:text-primary transition" @click="goBack">
+                返回
               </button>
             </div>
-          </div>
-
-          <!-- 错误提示 -->
-          <div v-if="error" class="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p class="text-sm text-red-600">{{ error }}</p>
-          </div>
-
-          <!-- 成功提示 -->
-          <div v-if="success" class="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p class="text-sm text-green-600">{{ success }}</p>
-          </div>
-
-          <!-- 提交按钮 -->
-          <button 
-            type="submit"
-            :disabled="loading || !isFormValid"
-            class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-          >
-            {{ loading ? '修改中...' : '确认修改' }}
-          </button>
-        </form>
-
-        <!-- 返回按钮 -->
-        <div class="mt-6 text-center">
-          <button 
-            @click="goBack"
-            class="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
-          >
-            <i class="fas fa-arrow-left mr-1"></i>
-            返回
-          </button>
+          </form>
         </div>
       </div>
     </div>
@@ -134,7 +143,6 @@ import { useUserStore } from '../stores/user'
 const router = useRouter()
 const userStore = useUserStore()
 
-// 状态
 const oldPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -145,7 +153,6 @@ const showOldPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-// 密码验证
 const passwordValid = ref({
   length: false,
   uppercase: true,
@@ -153,7 +160,6 @@ const passwordValid = ref({
   number: true
 })
 
-// 表单验证
 const isFormValid = computed(() => {
   return (
     oldPassword.value.trim() &&
@@ -164,7 +170,6 @@ const isFormValid = computed(() => {
   )
 })
 
-// 验证密码强度
 const validatePassword = () => {
   const password = newPassword.value
   passwordValid.value = {
@@ -175,7 +180,6 @@ const validatePassword = () => {
   }
 }
 
-// 修改密码
 const handleChangePassword = async () => {
   if (newPassword.value !== confirmPassword.value) {
     error.value = '两次输入的新密码不一致'
@@ -194,14 +198,11 @@ const handleChangePassword = async () => {
     )
 
     if (result.success) {
-      success.value = result.message || '密码修改成功！'
-      
-      // 清空表单
+      success.value = result.message || '密码修改成功'
       oldPassword.value = ''
       newPassword.value = ''
       confirmPassword.value = ''
       
-      // 延迟跳转
       setTimeout(() => {
         router.push('/dashboard')
       }, 2000)
@@ -215,7 +216,6 @@ const handleChangePassword = async () => {
   }
 }
 
-// 返回
 const goBack = () => {
   router.back()
 }

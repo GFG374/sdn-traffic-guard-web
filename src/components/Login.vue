@@ -1,203 +1,346 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div class="text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mb-4">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-          </svg>
+  <div class="min-h-screen flex items-center justify-center bg-slate-50">
+    <div class="w-full max-w-4xl px-4">
+      <div
+        class="flex flex-col md:flex-row bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"
+      >
+        <!-- 左侧品牌/介绍 -->
+        <div
+          class="hidden md:flex md:w-1/2 flex-col justify-between bg-gradient-to-b from-white to-slate-50 p-10"
+        >
+          <div class="space-y-4">
+            <p class="text-xs font-semibold text-primary tracking-[0.25em] uppercase">
+              SDN 平台
+            </p>
+            <h1 class="text-3xl xl:text-4xl font-black text-dark leading-snug">
+              流量检测与监控系统
+            </h1>
+            <p class="text-sm text-dark-2 leading-relaxed">
+              面向 SDN 网络的可视化流量检测与监控平台，支持多维度流量分析、
+              实时监控与告警，让网络状态一目了然。
+            </p>
+          </div>
+
+          <div class="mt-8 space-y-2 text-xs text-dark-2">
+            <p class="font-medium text-dark">· 安全可靠的身份认证</p>
+            <p>· 高校/实验室项目友好 · 支持后期功能扩展</p>
+          </div>
         </div>
-        <h2 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          基于SDN的流量检测与监控系统
-        </h2>
-        <p class="mt-3 text-center text-sm text-gray-600">
-          安全高效的网络设备管理系统
-        </p>
-        <p class="mt-2 text-center text-sm">
-          <a href="#" @click.prevent="showRegister = !showRegister" class="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
-            {{ showRegister ? '已有账号？直接登录' : '创建新账号' }}
-          </a>
-        </p>
-      </div>
-      
-      <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
-        <div class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-100">
-          <div class="space-y-5">
-            <!-- 头像选择 - 仅在注册时显示 -->
-            <div v-if="showRegister" class="flex flex-col items-center space-y-4">
-              <label class="block text-sm font-medium text-gray-700">设置头像</label>
-              <!-- 头像预览区域 -->
-              <div class="relative">
-                <!-- 注册时的头像预览 -->
-                <div v-if="showRegister" 
-                  class="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold transition-all duration-200 bg-blue-500"
-                >
-                  {{ form.username.charAt(0).toUpperCase() || 'U' }}
-                </div>
-                <img
-                  v-if="showRegister && previewAvatar"
-                  :src="previewAvatar"
-                  alt="头像预览"
-                  class="w-24 h-24 rounded-full object-cover border-2 border-indigo-500 absolute top-0 left-0"
-                />
-                <!-- 登录时的用户头像显示 -->
-                <div v-if="!showRegister" 
-                  class="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold transition-all duration-200 bg-blue-500"
-                >
-                  {{ form.username.charAt(0).toUpperCase() || 'U' }}
-                </div>
-                <img
-                  v-if="!showRegister && userAvatar"
-                  :src="userAvatar"
-                  alt="用户头像"
-                  class="w-24 h-24 rounded-full object-cover border-2 border-indigo-500 absolute top-0 left-0"
-                />
-                <!-- 删除按钮 -->
-                <button
-                  v-if="previewAvatar"
-                  @click="removeAvatar"
-                  class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                  type="button"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <!-- 文件上传按钮 -->
-              <div class="flex space-x-2">
-                <label class="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    @change="handleAvatarChange"
-                    class="hidden"
-                  />
-                  <div class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors">
-                    选择头像
-                  </div>
-                </label>
-              </div>
+
+        <!-- 右侧表单 -->
+        <div class="w-full md:w-1/2 p-7 md:p-10">
+          <!-- 顶部标题（移动端） -->
+          <div class="md:hidden mb-6">
+            <p class="text-[10px] font-semibold text-primary tracking-[0.25em] uppercase">
+              SDN 平台
+            </p>
+            <h1 class="mt-2 text-2xl font-black text-dark leading-snug">
+              流量检测与监控系统
+            </h1>
+          </div>
+
+          <!-- 登录 / 注册 切换 -->
+          <div class="mb-6">
+            <div class="inline-flex bg-slate-100 rounded-full p-1">
+              <button
+                type="button"
+                class="px-4 py-1.5 text-xs font-medium rounded-full transition-all"
+                :class="isLogin ? 'bg-white shadow-sm text-dark' : 'text-dark-2'"
+                @click="switchMode('login')"
+              >
+                登录
+              </button>
+              <button
+                type="button"
+                class="px-4 py-1.5 text-xs font-medium rounded-full transition-all"
+                :class="!isLogin ? 'bg-white shadow-sm text-dark' : 'text-dark-2'"
+                @click="switchMode('register')"
+              >
+                注册
+              </button>
             </div>
 
+            <p class="mt-4 text-sm text-dark-2">
+              {{ isLogin ? '欢迎回来，请登录以继续使用系统' : '创建一个新账号，开始使用系统' }}
+            </p>
+          </div>
+
+          <!-- 已有头像预览（登录时根据用户名获取到的头像） -->
+          <div v-if="isLogin && userAvatar" class="mb-4 flex justify-center">
+            <img
+              :src="userAvatar"
+              alt="用户头像"
+              class="w-16 h-16 rounded-full border-2 border-primary shadow-sm object-cover"
+            />
+          </div>
+
+          <!-- 提示信息 -->
+          <div v-if="error" class="mb-4">
+            <div
+              class="flex items-start space-x-2 text-sm rounded-2xl px-4 py-3 bg-red-50 text-red-600"
+            >
+              <svg class="w-5 h-5 mt-0.5" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 9v4"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+                <circle cx="12" cy="16" r="1" fill="currentColor" />
+                <path
+                  d="M12 4L3 20h18L12 4z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <p>{{ error }}</p>
+            </div>
+          </div>
+
+          <div v-if="success" class="mb-4">
+            <div
+              class="flex items-start space-x-2 text-sm rounded-2xl px-4 py-3 bg-emerald-50 text-emerald-600"
+            >
+              <svg class="w-5 h-5 mt-0.5" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <p>{{ success }}</p>
+            </div>
+          </div>
+
+          <!-- 表单 -->
+          <form class="space-y-4" @submit.prevent="handleSubmit">
+            <!-- 用户名 -->
             <div>
-              <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="username" class="flex items-center text-xs font-medium text-dark mb-1.5">
                 用户名
               </label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                <div
+                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2"
+                >
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 12a4 4 0 100-8 4 4 0 000 8z"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M4 20c0-3.314 3.134-6 7-6h2c3.866 0 7 2.686 7 6"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
                   </svg>
                 </div>
                 <input
                   id="username"
-                  name="username"
+                  v-model="form.username"
                   type="text"
                   required
-                  class="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   placeholder="请输入用户名"
-                  v-model="form.username"
                 />
               </div>
             </div>
-            
+
+            <!-- 密码 -->
             <div>
-              <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="password" class="flex items-center text-xs font-medium text-dark mb-1.5">
                 密码
               </label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                <div
+                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2"
+                >
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <rect
+                      x="4"
+                      y="9"
+                      width="16"
+                      height="11"
+                      rx="2"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <path
+                      d="M9 9V7a3 3 0 013-3v0a3 3 0 013 3v2"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                    />
                   </svg>
                 </div>
                 <input
                   id="password"
-                  name="password"
+                  v-model="form.password"
                   type="password"
                   required
-                  class="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200"
-                  placeholder="请输入密码"
-                  v-model="form.password"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                  :placeholder="isLogin ? '请输入密码' : '请设置登录密码'"
                 />
               </div>
             </div>
-            
-            <div v-if="showRegister">
-              <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+
+            <!-- 确认密码（仅注册） -->
+            <div v-if="!isLogin">
+              <label
+                for="confirmPassword"
+                class="flex items-center text-xs font-medium text-dark mb-1.5"
+              >
                 确认密码
               </label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                <div
+                  class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dark-2"
+                >
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <rect
+                      x="4"
+                      y="9"
+                      width="16"
+                      height="11"
+                      rx="2"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <path
+                      d="M9 9V7a3 3 0 013-3v0a3 3 0 013 3v2"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                    />
                   </svg>
                 </div>
                 <input
                   id="confirmPassword"
-                  name="confirmPassword"
+                  v-model="form.confirmPassword"
                   type="password"
                   required
-                  class="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   placeholder="请再次输入密码"
-                  v-model="form.confirmPassword"
                 />
               </div>
             </div>
-          </div>
 
-          <div class="pt-6">
-            <button
-              type="submit"
-              class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
-            >
-              <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                <svg class="h-5 w-5 text-white group-hover:text-indigo-100 transition-colors duration-200" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                </svg>
-              </span>
-              {{ showRegister ? '创建账号' : '安全登录' }}
-            </button>
-          </div>
+            <!-- 头像上传（仅注册） -->
+            <div v-if="!isLogin">
+              <label class="flex items-center text-xs font-medium text-dark mb-1.5">
+                头像（可选）
+              </label>
+              <div class="flex items-center space-x-4">
+                <div class="relative">
+                  <div
+                    class="w-16 h-16 rounded-full border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden"
+                  >
+                    <span v-if="!previewAvatar" class="text-[10px] text-dark-2">预览</span>
+                    <img
+                      v-else
+                      :src="previewAvatar"
+                      alt="头像预览"
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
 
-          <div v-if="!showRegister" class="text-center pt-4">
-            <router-link to="/forgot-password" class="text-indigo-600 hover:text-indigo-500 text-sm font-medium transition-colors duration-200 hover:underline">
-              忘记密码？立即找回
-            </router-link>
-          </div>
+                <div class="flex space-x-2">
+                  <label class="cursor-pointer">
+                    <input
+                      ref="avatarInputRef"
+                      type="file"
+                      accept="image/*"
+                      class="hidden"
+                      @change="handleAvatarChange"
+                    />
+                    <div
+                      class="px-4 py-2 text-xs rounded-xl bg-primary text-white font-medium hover:bg-primary/90 transition"
+                    >
+                      选择头像
+                    </div>
+                  </label>
 
-          <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm text-center">
-            <div class="flex items-center justify-center">
-              <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-              </svg>
-              {{ error }}
+                  <button
+                    v-if="previewAvatar"
+                    type="button"
+                    class="px-3 py-2 text-xs rounded-xl border border-slate-200 text-dark-2 hover:bg-slate-50 transition"
+                    @click="removeAvatar"
+                  >
+                    清除
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-          
-          <div v-if="success" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm text-center">
-            <div class="flex items-center justify-center">
-              <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-              </svg>
-              {{ success }}
+
+            <!-- 底部按钮与辅助链接 -->
+            <div class="pt-2 space-y-3">
+              <button
+                type="submit"
+                class="w-full flex justify-center items-center rounded-2xl bg-primary text-white text-sm font-semibold py-2.5 shadow-sm hover:bg-primary/90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                :disabled="loading"
+              >
+                <span
+                  v-if="loading"
+                  class="mr-2 inline-block h-4 w-4 animate-spin border-2 border-white/50 border-t-transparent rounded-full"
+                ></span>
+                <span>
+                  {{
+                    loading
+                      ? (isLogin ? '登录中...' : '创建中...')
+                      : (isLogin ? '安全登录' : '创建账号')
+                  }}
+                </span>
+              </button>
+
+              <div v-if="isLogin" class="flex items-center justify-between text-xs text-dark-2">
+                <router-link to="/forgot-password" class="hover:text-primary transition">
+                  忘记密码？
+                </router-link>
+                <button
+                  type="button"
+                  class="hover:text-primary transition"
+                  @click="switchMode('register')"
+                >
+                  还没有账号？去注册 →
+                </button>
+              </div>
+
+              <div v-else class="text-right text-xs text-dark-2">
+                <button
+                  type="button"
+                  class="hover:text-primary transition"
+                  @click="switchMode('login')"
+                >
+                  已有账号？去登录 →
+                </button>
+              </div>
             </div>
-          </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const showRegister = ref(false)
+const mode = ref<'login' | 'register'>('login')
+const loading = ref(false)
 const error = ref('')
 const success = ref('')
 
@@ -205,106 +348,169 @@ const form = reactive({
   username: '',
   password: '',
   confirmPassword: '',
-  avatar: null as string | null
+  avatar: null as string | null,
 })
 
-const previewAvatar = ref<string>('')
-const userAvatar = ref<string>('')
+const userAvatar = ref<string>('') // 登录时，根据用户名获取到的头像
+const previewAvatar = ref<string>('') // 注册时，上传头像的预览
+const avatarInputRef = ref<HTMLInputElement | null>(null)
 
-// 监听用户名变化，自动获取用户头像
+const isLogin = computed(() => mode.value === 'login')
+
+const resetMessages = () => {
+  error.value = ''
+  success.value = ''
+}
+
+const switchMode = (target: 'login' | 'register') => {
+  if (mode.value === target) return
+  mode.value = target
+  resetMessages()
+  if (target === 'register') {
+    userAvatar.value = ''
+  }
+}
+
+/**
+ * 根据用户名获取已有用户头像（用于登录界面）
+ * 加了：
+ * 1. 只在“返回时用户名仍然是当前值 & 仍是登录模式”时更新头像，避免旧请求覆盖新结果
+ */
 const fetchUserAvatar = async (username: string) => {
-  if (!username.trim()) {
+  if (!username) {
     userAvatar.value = ''
     return
   }
-  
+
+  // 记录这次请求对应的用户名
+  const requestedUsername = username
+
   try {
-    const response = await fetch(`/api/auth/user-avatar/${username}`)
+    const response = await fetch(`/api/auth/user-avatar/${encodeURIComponent(username)}`)
     const data = await response.json()
+
+    // 返回时如果用户名变了，或者已经切换到注册模式，就丢弃这次结果
+    if (requestedUsername !== form.username || !isLogin.value) {
+      return
+    }
+
     if (data.success && data.avatar) {
       userAvatar.value = data.avatar
     } else {
       userAvatar.value = ''
     }
-  } catch (error) {
-    console.error('获取用户头像失败:', error)
-    userAvatar.value = ''
+  } catch (e) {
+    console.error('获取用户头像失败:', e)
+    if (requestedUsername === form.username && isLogin.value) {
+      userAvatar.value = ''
+    }
   }
 }
 
-// 监听用户名输入
-watch(() => form.username, (newUsername) => {
-  if (!showRegister.value) {
-    fetchUserAvatar(newUsername)
+// 防抖定时器（非响应式）
+let avatarDebounceTimer: number | undefined
+
+// 监听用户名输入，登录模式下自动拉取头像（300ms 防抖）
+watch(
+  () => form.username,
+  (newUsername) => {
+    if (!isLogin.value) {
+      userAvatar.value = ''
+      return
+    }
+
+    if (avatarDebounceTimer) {
+      clearTimeout(avatarDebounceTimer)
+    }
+
+    avatarDebounceTimer = window.setTimeout(() => {
+      fetchUserAvatar(newUsername)
+    }, 300)
   }
-})
+)
 
 const handleAvatarChange = (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  
-  if (file) {
-    // 检查文件类型
-    if (!file.type.startsWith('image/')) {
-      error.value = '请选择图片文件'
-      return
-    }
-    
-    // 检查文件大小 (最大2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      error.value = '图片文件不能超过2MB'
-      return
-    }
-    
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      previewAvatar.value = e.target?.result as string
-      form.avatar = previewAvatar.value // 使用Base64字符串作为头像
-    }
-    reader.readAsDataURL(file)
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const result = e.target?.result as string
+    previewAvatar.value = result
+    form.avatar = result // 使用 Base64 作为头像
   }
+  reader.readAsDataURL(file)
 }
 
 const removeAvatar = () => {
   previewAvatar.value = ''
   form.avatar = null
-  const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-  if (fileInput) {
-    fileInput.value = ''
+  if (avatarInputRef.value) {
+    avatarInputRef.value.value = ''
   }
 }
 
 const handleSubmit = async () => {
-  error.value = ''
-  success.value = ''
+  if (loading.value) return
 
-  if (showRegister.value) {
+  resetMessages()
+
+  if (mode.value === 'register') {
+    if (!form.username || !form.password || !form.confirmPassword) {
+      error.value = '请完整填写注册信息'
+      return
+    }
+
     if (form.password !== form.confirmPassword) {
       error.value = '两次输入的密码不一致'
       return
     }
-    
-    const result = await userStore.register(form.username, form.password, undefined, form.avatar || undefined)
-    if (result.success) {
-      success.value = '注册成功！正在跳转到登录...'
-      setTimeout(() => {
-        showRegister.value = false
-        success.value = ''
-        form.username = ''
-        form.password = ''
-        form.confirmPassword = ''
-        previewAvatar.value = ''
-        form.avatar = null
-      }, 1500)
-    } else {
-      error.value = result.message
+
+    loading.value = true
+    try {
+      const result = await userStore.register(
+        form.username,
+        form.password,
+        undefined,
+        form.avatar || undefined
+      )
+
+      if (result.success) {
+        success.value = '注册成功，正在为你跳转到登录界面...'
+        setTimeout(() => {
+          mode.value = 'login'
+          success.value = ''
+        }, 1500)
+      } else {
+        error.value = result.message || '注册失败，请稍后重试'
+      }
+    } catch (e) {
+      console.error(e)
+      error.value = '注册失败，请稍后重试'
+    } finally {
+      loading.value = false
     }
   } else {
-    const result = await userStore.login(form.username, form.password)
-    if (result.success) {
-      router.push('/dashboard')
-    } else {
-      error.value = result.message
+    // 登录
+    if (!form.username || !form.password) {
+      error.value = '请输入用户名和密码'
+      return
+    }
+
+    loading.value = true
+    try {
+      const result = await userStore.login(form.username, form.password)
+      if (result.success) {
+        router.push('/dashboard')
+      } else {
+        error.value = result.message || '登录失败，请稍后重试'
+      }
+    } catch (e) {
+      console.error(e)
+      error.value = '登录失败，请稍后重试'
+    } finally {
+      loading.value = false
     }
   }
 }
