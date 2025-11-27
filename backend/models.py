@@ -9,24 +9,20 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     username = Column(String(50), unique=True, index=True, nullable=False)
-    email = Column(String(100), unique=True, index=True, nullable=True)
-    hashed_password = Column(String(255), nullable=False)
-    full_name = Column(String(100))
-    department = Column(String(100))
-    role = Column(String(50), default="user")
-    avatar = Column(String(500), nullable=True)  # 存储头像URL或Base64数据
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    last_login = Column(DateTime)
-    
-    # 关系
-    devices = relationship("Device", back_populates="user")
-    reset_tokens = relationship("PasswordResetToken", back_populates="user")
-    ai_conversations = relationship("AIConversation", back_populates="user")
-    ai_files = relationship("AIFile", back_populates="user")
+    password = Column(String(255), nullable=False)
+    role = Column(String(50), default="admin")  # 默认管理员
+    avatar = Column(Text, nullable=True)  # base64 头像，可为空
+    # 对齐 MySQL 表字段：created_at / updated_at
+    created_at = Column("created_at", DateTime, nullable=True, default=datetime.utcnow)
+    updated_at = Column("updated_at", DateTime, nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 仅为满足外键关系映射，不会新增列
+    devices = relationship("Device", back_populates="user", uselist=True)
+    reset_tokens = relationship("PasswordResetToken", back_populates="user", uselist=True)
+    ai_conversations = relationship("AIConversation", back_populates="user", uselist=True)
+    ai_files = relationship("AIFile", back_populates="user", uselist=True)
 
 class Device(Base):
     __tablename__ = "devices"
@@ -37,7 +33,7 @@ class Device(Base):
     device_type = Column(String(50), nullable=False)
     location = Column(String(200))
     status = Column(String(20), default="offline")
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(String(36), ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -46,8 +42,8 @@ class Device(Base):
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(100), ForeignKey("users.email"), nullable=True)
+    id = Column(String(50), primary_key=True, index=True, default=lambda: f"reset-{int(datetime.utcnow().timestamp() * 1000)}-{str(uuid.uuid4())[:8]}")
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     token = Column(String(255), unique=True, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     used = Column(Boolean, default=False)
@@ -60,7 +56,7 @@ class AIConversation(Base):
     __tablename__ = "ai_conversations"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     title = Column(String(200), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_message_at = Column(DateTime, default=datetime.utcnow)
@@ -84,7 +80,7 @@ class AIFile(Base):
     __tablename__ = "ai_files"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     filename = Column(String(255), nullable=False)
     content_type = Column(String(100), nullable=False)
     file_size = Column(Integer, nullable=False)
@@ -226,7 +222,7 @@ class BlacklistEntry(Base):
     description = Column(String(255), nullable=True)
     rule_type = Column(String(20), default="ip")  # ip, mac, ip_range
     is_active = Column(Boolean, default=True)
-    created_by = Column(Integer, ForeignKey("users.id"))
+    created_by = Column(String(36), ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -241,7 +237,7 @@ class WhitelistEntry(Base):
     description = Column(String(255), nullable=True)
     rule_type = Column(String(20), default="ip")  # ip, mac, ip_range
     is_active = Column(Boolean, default=True)
-    created_by = Column(Integer, ForeignKey("users.id"))
+    created_by = Column(String(36), ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
