@@ -13,17 +13,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     """
     try:
         # 这里简化处理，实际应该验证JWT token
-        user_id_str = credentials.credentials
-        # 将字符串ID转换为整数
-        try:
-            user_id = int(user_id_str)
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="无效的用户ID格式",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        
+        user_id = credentials.credentials  # 现在直接使用字符串ID（MySQL里是varchar）
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(

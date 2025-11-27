@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends, Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import datetime, timedelta
 import uuid
 import os
@@ -17,23 +18,13 @@ from auth import get_current_user
 
 
 
-# 创建数据库表
-Base.metadata.create_all(bind=engine)
+# 注意：使用已有 MySQL 表结构，启动时不自动建表，避免与现有表类型冲突
 
 # Pydantic模型
 class UserCreate(BaseModel):
     username: str
     password: str
-    email: EmailStr = None
     avatar: str = None
-    
-    @validator('email')
-    def validate_email_format(cls, v):
-        if v and '@qq.com' in str(v).lower():
-            local_part = str(v).split('@')[0]
-            if local_part and (len(local_part) < 3 or len(local_part) > 30):
-                raise ValueError('QQ邮箱格式不正确，用户名长度应在3-30位之间')
-        return v
 
 class UserLogin(BaseModel):
     username: str
@@ -42,30 +33,11 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     id: str
     username: str
-    email: str = None
     role: str
-    created_at: datetime
+    created_at: datetime | None = None
 
 class ForgotPasswordRequest(BaseModel):
     username: str
-    email: EmailStr
-    
-    @validator('email')
-    def validate_qq_email(cls, v):
-        if '@qq.com' in str(v).lower():
-            # QQ邮箱验证：确保格式正确
-            local_part = str(v).split('@')[0]
-            if not local_part or len(local_part) < 5 or len(local_part) > 20:
-                raise ValueError('QQ邮箱格式不正确')
-        return v
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "username": "testuser",
-                "email": "12345678@qq.com"
-            }
-        }
 
 class ResetPasswordRequest(BaseModel):
     token: str
@@ -103,22 +75,17 @@ app.add_middleware(
 # API路由前缀
 API_PREFIX = "/api"
 
-# 用户头像API
-@app.get(f"{API_PREFIX}/auth/user-avatar/{{username}}")
-def get_user_avatar(username: str, db: Session = Depends(get_db)):
-    """获取用户头像"""
-    user = db.query(User).filter(User.username == username).first()
-    if not user:
-        return {"success": False, "message": "用户不存在"}
-    
-    return {"success": True, "avatar": user.avatar}
-
 # 用户登录API
 @app.post(f"{API_PREFIX}/auth/login")
 def login(user_login: UserLogin, db: Session = Depends(get_db)):
     """用户登录"""
-    user = db.query(User).filter(User.username == user_login.username).first()
-    if not user or user.hashed_password != user_login.password:
+    username_norm = user_login.username.strip().lower()
+    user = (
+        db.query(User)
+        .filter(func.lower(User.username) == username_norm)
+        .first()
+    )
+    if not user or user.password != user_login.password:
         return {"success": False, "message": "用户名或密码错误"}
     
     # 返回用户信息和token（这里简化处理，使用用户ID作为token）
@@ -129,10 +96,9 @@ def login(user_login: UserLogin, db: Session = Depends(get_db)):
         "user": {
             "id": str(user.id),
             "username": user.username,
-            "email": user.email,
             "role": user.role,
-            "avatar": user.avatar,
-            "created_at": user.created_at
+            "created_at": user.created_at,
+            "avatar": getattr(user, "avatar", None)
         }
     }
 
@@ -158,9 +124,9 @@ app.include_router(v1_router)
 try:
     from agent_routes import router as agent_router
     app.include_router(agent_router)
-    print("✅ Agent路由已加载")
+    print("Agent routes loaded")
 except Exception as e:
-    print(f"⚠️ Agent路由加载失败: {e}")
+    print(f"Agent routes load failed: {e}")
 
 
 
@@ -179,25 +145,32 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         if not user.password or len(user.password) < 6:
             raise HTTPException(status_code=400, detail="密码长度不能少于6个字符")
         
+        username_clean = user.username.strip()
+        username_norm = username_clean.lower()
+
         # 检查用户名是否已存在
-        existing_user = db.query(User).filter(User.username == user.username.strip()).first()
+        existing_user = (
+            db.query(User)
+            .filter(func.lower(User.username) == username_norm)
+            .first()
+        )
         if existing_user:
             raise HTTPException(status_code=400, detail="用户名已存在")
         
-        # 检查邮箱是否已存在（如果提供了邮箱）
-        if user.email:
-            existing_email = db.query(User).filter(User.email == user.email.strip()).first()
-            if existing_email:
-                raise HTTPException(status_code=400, detail="邮箱已被注册")
-        
         # 创建新用户
         new_user = User(
-            username=user.username.strip(),
-            hashed_password=user.password,  # 生产环境应使用哈希
-            email=user.email.strip() if user.email else None,
-            role="user",
-            avatar=user.avatar if user.avatar and user.avatar.strip() else None
+            username=username_clean,
+            password=user.password,  # 生产环境应使用哈希
+            role="admin"  # 所有新用户设为管理员
         )
+        # 如果数据库存在 avatar 字段则写入，否则忽略
+        if hasattr(User, "avatar") and user.avatar:
+            new_user.avatar = user.avatar.strip()
+        # 明确写入时间，避免数据库未自动填充时为空
+        if hasattr(new_user, "created_at") and not new_user.created_at:
+            new_user.created_at = datetime.utcnow()
+        if hasattr(new_user, "updated_at") and not new_user.updated_at:
+            new_user.updated_at = datetime.utcnow()
         
         db.add(new_user)
         db.commit()
@@ -205,14 +178,13 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         
         return {
             "success": True,
-            "message": "注册成功",
-            "user": {
-                "id": new_user.id,
-                "username": new_user.username,
-                "email": new_user.email,
-                "role": new_user.role,
-                "avatar": new_user.avatar
-            }
+        "message": "注册成功",
+        "user": {
+            "id": new_user.id,
+            "username": new_user.username,
+            "role": new_user.role,
+            "avatar": getattr(new_user, "avatar", None)
+        }
         }
     except HTTPException:
         raise
@@ -229,9 +201,7 @@ async def get_users(db: Session = Depends(get_db)):
     return {"users": [{
         "id": user.id,
         "username": user.username,
-        "email": user.email,
         "role": user.role,
-        "avatar": user.avatar,
         "created_at": user.created_at
     } for user in users]}
 
@@ -243,40 +213,23 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "user": {
             "id": current_user.id,
             "username": current_user.username,
-            "email": current_user.email,
             "role": current_user.role,
-            "avatar": current_user.avatar,
-            "created_at": current_user.created_at
+            "created_at": current_user.created_at,
+            "avatar": getattr(current_user, "avatar", None)
         }
-    }
-
-@app.get("/api/auth/user-avatar/{username}")
-async def get_user_avatar(username: str, db: Session = Depends(get_db)):
-    """根据用户名获取用户头像（无需认证）"""
-    user = db.query(User).filter(User.username == username).first()
-    if not user:
-        return {"avatar": None}
-    
-    return {
-        "success": True,
-        "avatar": user.avatar
     }
 
 @app.post("/api/auth/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
     # 检查用户名是否存在
-    user_by_username = db.query(User).filter(User.username == request.username).first()
-    if not user_by_username:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    
-    # 检查邮箱是否匹配
-    user = db.query(User).filter(
-        User.username == request.username,
-        User.email == request.email
-    ).first()
-    
+    username_norm = request.username.strip().lower()
+    user = (
+        db.query(User)
+        .filter(func.lower(User.username) == username_norm)
+        .first()
+    )
     if not user:
-        raise HTTPException(status_code=404, detail="邮箱不匹配")
+        raise HTTPException(status_code=404, detail="用户不存在")
     
     # 生成重置token
     reset_token = str(uuid.uuid4())
@@ -350,7 +303,12 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
 @app.post("/api/auth/get-password")
 async def get_password(request: GetPasswordRequest, db: Session = Depends(get_db)):
     # 查找用户
-    user = db.query(User).filter(User.username == request.username).first()
+    username_norm = request.username.strip().lower()
+    user = (
+        db.query(User)
+        .filter(func.lower(User.username) == username_norm)
+        .first()
+    )
     
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -358,27 +316,36 @@ async def get_password(request: GetPasswordRequest, db: Session = Depends(get_db
     return {
         "success": True,
         "message": "密码获取成功",
-        "password": user.hashed_password  # 注意：生产环境不应该返回明文密码
+        "password": user.password  # 注意：生产环境不应该返回明文密码
     }
 
 @app.post("/api/auth/change-password")
 async def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db)):
     # 检查用户是否存在
-    user_check = db.query(User).filter(User.username == request.username).first()
+    username_norm = request.username.strip().lower()
+    user_check = (
+        db.query(User)
+        .filter(func.lower(User.username) == username_norm)
+        .first()
+    )
     if not user_check:
         raise HTTPException(status_code=404, detail="用户不存在")
     
     # 验证密码
-    user = db.query(User).filter(
-        User.username == request.username,
-        User.password == request.old_password
-    ).first()
+    user = (
+        db.query(User)
+        .filter(
+            func.lower(User.username) == username_norm,
+            User.password == request.old_password
+        )
+        .first()
+    )
     
     if not user:
         raise HTTPException(status_code=401, detail="原密码错误")
     
     # 更新用户密码
-    user.hashed_password = request.new_password  # 生产环境应使用哈希
+    user.password = request.new_password  # 生产环境应使用哈希
     db.commit()
     
     return {
@@ -394,7 +361,12 @@ async def update_avatar(
 ):
     """更新用户头像"""
     # 检查用户是否存在
-    user = db.query(User).filter(User.username == username).first()
+    username_norm = username.strip().lower()
+    user = (
+        db.query(User)
+        .filter(func.lower(User.username) == username_norm)
+        .first()
+    )
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
@@ -414,7 +386,11 @@ async def update_avatar(
     avatar_base64 = base64.b64encode(contents).decode('utf-8')
     
     # 更新用户头像
+    if not hasattr(User, "avatar"):
+        raise HTTPException(status_code=500, detail="数据库未配置头像字段，请联系管理员")
     user.avatar = f"data:{avatar.content_type};base64,{avatar_base64}"
+    if hasattr(user, "updated_at"):
+        user.updated_at = datetime.utcnow()
     db.commit()
     
     return {
@@ -427,7 +403,12 @@ async def update_avatar(
 async def get_user_avatar(username: str, db: Session = Depends(get_db)):
     """获取用户头像"""
     # 检查用户是否存在
-    user = db.query(User).filter(User.username == username).first()
+    username_norm = username.strip().lower()
+    user = (
+        db.query(User)
+        .filter(func.lower(User.username) == username_norm)
+        .first()
+    )
     if not user:
         return {
             "success": False,
@@ -438,7 +419,7 @@ async def get_user_avatar(username: str, db: Session = Depends(get_db)):
     return {
         "success": True,
         "message": "获取头像成功",
-        "avatar": user.avatar
+        "avatar": getattr(user, "avatar", None)
     }
 
 
