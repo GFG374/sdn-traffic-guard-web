@@ -201,13 +201,25 @@
 
             <button
               type="submit"
-              :disabled="loading"
+              :disabled="loading || redirecting"
               class="w-full flex justify-center items-center rounded-2xl bg-primary text-white text-sm font-semibold py-2.5 shadow-sm hover:bg-primary/90 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <span v-if="loading" class="mr-2 inline-block h-4 w-4 animate-spin border-2 border-white/50 border-t-transparent rounded-full"></span>
-              <span>{{ loading ? '修改中...' : '修改密码' }}</span>
+              <span v-if="redirecting">即将跳转登录 ({{ redirectSeconds }}s)</span>
+              <span v-else>{{ loading ? '修改中...' : '修改密码' }}</span>
             </button>
           </form>
+
+          <div class="mt-4 flex justify-center">
+            <button
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-primary border border-primary/40 rounded-xl hover:bg-primary/5 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              :disabled="redirecting"
+              @click="goLogin"
+            >
+              返回登录
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -231,6 +243,7 @@ const resetToken = ref('')
 const newResetPassword = ref('')
 const resetComplete = ref(false)
 const redirectSeconds = ref(3)
+const redirecting = ref(false)
 let redirectTimer: number | null = null
 
 const changeUsername = ref('')
@@ -248,6 +261,11 @@ const handleGetPassword = async () => {
   resetToken.value = ''
   newResetPassword.value = ''
   resetComplete.value = false
+  redirecting.value = false
+  if (redirectTimer) {
+    clearInterval(redirectTimer)
+    redirectTimer = null
+  }
 
   if (!recoverUsername.value.trim()) {
     recoverError.value = '请输入用户名'
@@ -291,17 +309,7 @@ const handleResetWithToken = async () => {
     if (result.success) {
       recoverSuccess.value = '密码已重置成功，即将跳转到登录页'
       resetComplete.value = true
-      redirectSeconds.value = 3
-      if (redirectTimer) {
-        clearInterval(redirectTimer)
-      }
-      redirectTimer = window.setInterval(() => {
-        redirectSeconds.value -= 1
-        if (redirectSeconds.value <= 0) {
-          clearInterval(redirectTimer!)
-          router.push('/login')
-        }
-      }, 1000)
+      startRedirect()
     } else {
       recoverError.value = result.message || '密码重置失败'
     }
@@ -310,6 +318,28 @@ const handleResetWithToken = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const startRedirect = () => {
+  redirecting.value = true
+  redirectSeconds.value = 3
+  if (redirectTimer) {
+    clearInterval(redirectTimer)
+  }
+  redirectTimer = window.setInterval(() => {
+    redirectSeconds.value -= 1
+    if (redirectSeconds.value <= 0) {
+      clearInterval(redirectTimer!)
+      router.push('/login')
+    }
+  }, 1000)
+}
+
+const goLogin = () => {
+  if (redirectTimer) {
+    clearInterval(redirectTimer)
+  }
+  router.push('/login')
 }
 
 // 清理倒计时
@@ -356,9 +386,10 @@ const handleChangePassword = async () => {
     )
     
     if (result.success) {
-      changeSuccess.value = '密码修改成功！请使用新密码登录'
+      changeSuccess.value = '密码修改成功！即将跳转到登录页，请使用新密码登录'
       oldPassword.value = ''
       newPassword.value = ''
+      startRedirect()
     } else {
       changeError.value = result.message || '密码修改失败'
       if (result.message?.includes('用户名或原密码错误')) {
