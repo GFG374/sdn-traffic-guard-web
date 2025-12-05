@@ -75,7 +75,8 @@ REALTIME_INSERT = False  # 关闭实时写库，改为批量写库（减少I/O�
 THRESH = {
     'arp': {'mac_change': 1, 'spoof_cnt': 1},   # ARP欺骗：MAC变化检测
     'udp': {'flood_rate': 200},                  # UDP Flood：200 pps
-    'icmp': {'flood_rate': 2000},                # ✅ ICMP Flood：2000 pps（避免pingall误报）
+    # 调低 ICMP 阈值以便检测攻击，仍高于 pingall 等正常小流量
+    'icmp': {'flood_rate': 400},                 # ✅ ICMP Flood：400 pps（避免 pingall 误报）
     'syn': {'ratio': 0.8, 'rate': 200, 'min_tcp': 20},  # SYN Flood：200 pps
     'botnet': {'dst_ip_cnt': 10, 'port_entropy': 3.0, 'pkt_rate': 2000}  # 僵尸网络
 }
@@ -179,6 +180,7 @@ class SDNSecurityController(app_manager.RyuApp):
         
         # 🎯 延迟3秒后更新所有交换机的默认规则（确保交换机已连接）
         hub.spawn_after(3, self.update_all_table_miss_rules)
+        hub.spawn_after(3, self.update_all_icmp_punt_rules)
 
     # ---------------- 工具 ----------------
     def _load_acl_file(self, path):
@@ -547,6 +549,7 @@ class SDNSecurityController(app_manager.RyuApp):
             if dp.id not in self.datapaths:
                 self.datapaths[dp.id] = dp
                 self._install_table_miss(dp)
+                self._install_icmp_punt(dp)
                 self.logger.info(f"✅ 交换机 {dp.id} 已连接")
         else:
             # ✅ 交换机断连检测
@@ -575,6 +578,24 @@ class SDNSecurityController(app_manager.RyuApp):
             self.logger.info(f"🔄 正在更新交换机 {dp_id} 的默认规则...")
             self._install_table_miss(dp)
         self.logger.info(f"✅ 已更新 {len(self.datapaths)} 个交换机的默认规则")
+
+    def _install_icmp_punt(self, dp):
+        """为 ICMP 流量增加 controller+normal 的高优先级转发，确保 ICMP 包会 packet_in 参与检测。"""
+        ofp, ps = dp.ofproto, dp.ofproto_parser
+        match = ps.OFPMatch(eth_type=ether_types.ETH_TYPE_IP, ip_proto=1)
+        actions = [
+            ps.OFPActionOutput(ofp.OFPP_CONTROLLER, ofp.OFPCML_NO_BUFFER),
+            ps.OFPActionOutput(ofp.OFPP_NORMAL)
+        ]
+        # 优先级高于学习流（学习流 prio=1），不超时
+        self._add_flow(dp, 100, match, actions, idle=0, hard=0)
+        self.logger.info(f"✅ 交换机 {dp.id} 安装 ICMP punt 规则 (controller+normal)")
+
+    def update_all_icmp_punt_rules(self):
+        """为已连接交换机刷新 ICMP punt 规则"""
+        for dp_id, dp in self.datapaths.items():
+            self._install_icmp_punt(dp)
+        self.logger.info(f"ℹ️ 已为 {len(self.datapaths)} 个交换机刷新 ICMP punt 规则")
 
     def _add_flow(self, dp, prio, match, acts, idle=60, hard=0):
         ofp, ps = dp.ofproto, dp.ofproto_parser
@@ -839,7 +860,7 @@ class SDNSecurityController(app_manager.RyuApp):
         elif udp_pkt and ip_pkt:
             self._udp_stat(src_ip, ip_pkt.dst, udp_pkt.dst_port)
         elif icmp_pkt and ip_pkt:
-            self._icmp_stat(src_ip, ip_pkt.dst)
+            self._icmp_stat(src_ip, ip_pkt.dst, icmp_pkt)
         elif arp_pkt:
             self._arp_stat(arp_pkt, src_ip)
 
@@ -933,7 +954,10 @@ class SDNSecurityController(app_manager.RyuApp):
         # 调用检测函数
         self._check_udp_flood(src_ip, dst_ip)
 
-    def _icmp_stat(self, src_ip, dst_ip):
+    def _icmp_stat(self, src_ip, dst_ip, icmp_pkt=None):
+        # 只统计 ICMP Echo Request，避免把受害者的 Echo Reply 误判为攻击
+        if icmp_pkt and getattr(icmp_pkt, 'type', None) not in (getattr(icmp, 'ICMP_ECHO_REQUEST', 8), 8):
+            return
         if self.acl_check(src_ip) == 'white':
             return
         st = self.icmp_stats[src_ip]
@@ -1080,6 +1104,8 @@ class SDNSecurityController(app_manager.RyuApp):
         icmp_threshold = CUSTOM_RULES.get('icmp_threshold')
         if icmp_threshold and rate < icmp_threshold:
             self.logger.info(f"[口语规则] ICMP流量 {rate:.1f} pkt/s 低于阈值 {icmp_threshold}，跳过限速")
+            st['count'] = 0
+            st['last'] = now
             return
         
         if rate > THRESH['icmp']['flood_rate']:
@@ -1087,8 +1113,10 @@ class SDNSecurityController(app_manager.RyuApp):
             self._raise_anomaly({'src_ip': src_ip, 'dst_ip': dst_ip, 'protocol': 'ICMP',
                                  'anomaly_type': 'ICMP Flood',
                                  'details': f'rate={rate:.1f}'})
-            # ✅ 清零计数器，但不更新last（由_reset_loop统一更新）
-            st['count'] = 0
+        
+        # ✅ 检测完成后自维护滑动窗口，避免依赖全局清零
+        st['count'] = 0
+        st['last'] = now
 
     # ARP攻击检测（仅MAC变化检测）
     def _check_arp_attack(self, src_ip, arp_pkt):
@@ -2191,14 +2219,11 @@ class SDNSecurityController(app_manager.RyuApp):
                 if len(v['macs']) > 5:
                     v['macs'] = set(list(v['macs'])[-3:])
 
-            # ✅ 2) 每秒清零TCP/UDP/ICMP统计（持续监控攻击）
+            # ✅ 2) 每秒清零 TCP/UDP 统计（持续监控攻击）
             for v in self.tcp_flag_stats.values():
                 v['syn'] = v['total'] = 0
                 v['last'] = now
             for v in self.udp_stats.values():
-                v['count'] = 0
-                v['last'] = now
-            for v in self.icmp_stats.values():
                 v['count'] = 0
                 v['last'] = now
 
@@ -5534,4 +5559,3 @@ def _patched_create_contexts(self):
         wsgi._app = CORSMiddleware(wsgi._app)   # ← 这里必须包一层
     return ret
 ry_app_mgr.AppManager.create_contexts = _patched_create_contexts
-
