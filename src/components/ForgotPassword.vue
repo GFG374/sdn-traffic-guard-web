@@ -88,15 +88,43 @@
                   v-model="recoverUsername"
                   type="text"
                   required
+                  :disabled="resetComplete"
                   class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-9 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   placeholder="请输入用户名"
                 />
               </div>
             </div>
 
-            <div v-if="showPassword" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-              <p class="text-dark font-medium">您的密码是：</p>
-              <p class="text-primary font-bold text-lg mt-1 break-all">{{ showPassword }}</p>
+            <div v-if="resetToken" class="space-y-3">
+              <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                <p class="font-medium">重置令牌（演示环境直接显示，生产环境应通过邮件发送）</p>
+                <p class="mt-1 break-all text-xs text-amber-900">{{ resetToken }}</p>
+              </div>
+
+              <div>
+                <label for="new-reset-password" class="flex items-center text-xs font-medium text-dark mb-1.5">
+                  输入新密码
+                </label>
+                <input
+                  id="new-reset-password"
+                  v-model="newResetPassword"
+                  type="password"
+                  :disabled="resetComplete"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-dark outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                  placeholder="请输入新密码"
+                />
+              </div>
+
+              <button
+                type="button"
+                :disabled="loading || resetComplete"
+                class="w-full flex justify-center items-center rounded-2xl bg-emerald-600 text-white text-sm font-semibold py-2.5 shadow-sm hover:bg-emerald-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                @click="handleResetWithToken"
+              >
+                <span v-if="loading" class="mr-2 inline-block h-4 w-4 animate-spin border-2 border-white/50 border-t-transparent rounded-full"></span>
+                <span v-if="resetComplete">已重置，请稍候跳转 ({{ redirectSeconds }}s)</span>
+                <span v-else>{{ loading ? '重置中...' : '确认重置密码' }}</span>
+              </button>
             </div>
 
             <button
@@ -173,13 +201,25 @@
 
             <button
               type="submit"
-              :disabled="loading"
+              :disabled="loading || redirecting"
               class="w-full flex justify-center items-center rounded-2xl bg-primary text-white text-sm font-semibold py-2.5 shadow-sm hover:bg-primary/90 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <span v-if="loading" class="mr-2 inline-block h-4 w-4 animate-spin border-2 border-white/50 border-t-transparent rounded-full"></span>
-              <span>{{ loading ? '修改中...' : '修改密码' }}</span>
+              <span v-if="redirecting">即将跳转登录 ({{ redirectSeconds }}s)</span>
+              <span v-else>{{ loading ? '修改中...' : '修改密码' }}</span>
             </button>
           </form>
+
+          <div class="mt-4 flex justify-center">
+            <button
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-primary border border-primary/40 rounded-xl hover:bg-primary/5 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              :disabled="redirecting"
+              @click="goLogin"
+            >
+              返回登录
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -187,17 +227,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useUserStore } from '../stores/user'
+import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+const router = useRouter()
 
 const activeTab = ref<'recover' | 'change'>('recover')
 
 const recoverUsername = ref('')
 const recoverError = ref('')
 const recoverSuccess = ref('')
-const showPassword = ref('')
+const resetToken = ref('')
+const newResetPassword = ref('')
+const resetComplete = ref(false)
+const redirectSeconds = ref(3)
+const redirecting = ref(false)
+let redirectTimer: number | null = null
 
 const changeUsername = ref('')
 const oldPassword = ref('')
@@ -211,7 +258,14 @@ const handleGetPassword = async () => {
   loading.value = true
   recoverError.value = ''
   recoverSuccess.value = ''
-  showPassword.value = ''
+  resetToken.value = ''
+  newResetPassword.value = ''
+  resetComplete.value = false
+  redirecting.value = false
+  if (redirectTimer) {
+    clearInterval(redirectTimer)
+    redirectTimer = null
+  }
 
   if (!recoverUsername.value.trim()) {
     recoverError.value = '请输入用户名'
@@ -220,23 +274,80 @@ const handleGetPassword = async () => {
   }
 
   try {
-    const result = await userStore.getPassword(recoverUsername.value.trim())
-    
-    if (result.success && result.password) {
-      showPassword.value = result.password
-      recoverSuccess.value = '密码获取成功！请妥善保管您的密码'
+    // 请求后端生成重置令牌（演示环境直接返回 token）
+    const result = await userStore.forgotPassword(recoverUsername.value.trim(), '')
+
+    if (result.success && result.resetToken) {
+      resetToken.value = result.resetToken
+      recoverSuccess.value = '重置链接已生成，请设置新密码'
     } else {
-      recoverError.value = result.message || '获取密码失败'
-      if (result.message?.includes('用户不存在')) {
-        recoverError.value = '用户不存在，请检查用户名是否正确'
-      }
+      recoverError.value = result.message || '生成重置链接失败'
     }
   } catch (err) {
-    recoverError.value = '获取密码失败，请检查网络连接后重试'
+    recoverError.value = '生成重置链接失败，请检查网络连接后重试'
   } finally {
     loading.value = false
   }
 }
+
+const handleResetWithToken = async () => {
+  recoverError.value = ''
+  recoverSuccess.value = ''
+
+  if (!resetToken.value) {
+    recoverError.value = '请先点击“找回密码”生成重置链接'
+    return
+  }
+  if (!newResetPassword.value.trim()) {
+    recoverError.value = '请输入新的密码'
+    return
+  }
+
+  loading.value = true
+  try {
+    const result = await userStore.resetPassword(resetToken.value, newResetPassword.value.trim())
+    if (result.success) {
+      recoverSuccess.value = '密码已重置成功，即将跳转到登录页'
+      resetComplete.value = true
+      startRedirect()
+    } else {
+      recoverError.value = result.message || '密码重置失败'
+    }
+  } catch (err) {
+    recoverError.value = '密码重置失败，请稍后重试'
+  } finally {
+    loading.value = false
+  }
+}
+
+const startRedirect = () => {
+  redirecting.value = true
+  redirectSeconds.value = 3
+  if (redirectTimer) {
+    clearInterval(redirectTimer)
+  }
+  redirectTimer = window.setInterval(() => {
+    redirectSeconds.value -= 1
+    if (redirectSeconds.value <= 0) {
+      clearInterval(redirectTimer!)
+      router.push('/login')
+    }
+  }, 1000)
+}
+
+const goLogin = () => {
+  if (redirectTimer) {
+    clearInterval(redirectTimer)
+  }
+  router.push('/login')
+}
+
+// 清理倒计时
+onUnmounted(() => {
+  if (redirectTimer) {
+    clearInterval(redirectTimer)
+  }
+})
 
 const handleChangePassword = async () => {
   loading.value = true
@@ -275,9 +386,10 @@ const handleChangePassword = async () => {
     )
     
     if (result.success) {
-      changeSuccess.value = '密码修改成功！请使用新密码登录'
+      changeSuccess.value = '密码修改成功！即将跳转到登录页，请使用新密码登录'
       oldPassword.value = ''
       newPassword.value = ''
+      startRedirect()
     } else {
       changeError.value = result.message || '密码修改失败'
       if (result.message?.includes('用户名或原密码错误')) {
